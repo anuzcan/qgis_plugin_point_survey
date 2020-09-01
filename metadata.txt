@@ -1,0 +1,9 @@
+[general]
+name=RTK Raster Mapeo
+description=Levantamiento de nube de puntos para generacion de MDE
+about=Plugin desarrollado por AgriTecnologia Nunez  Costa Rica
+version=1.0
+qgisMinimumVersion=3.0
+author=Andres Nunez
+email=agritecnologianunez@outlook.com
+repository=https://github.com/anuzcan/quick_survey_RTK
