@@ -1,8 +1,9 @@
 from PyQt5.QtWidgets import QAction, QMessageBox, QWidget, QPushButton
 from PyQt5.QtCore import QTimer, QVariant, Qt
 from PyQt5.QtGui import QIcon
+
 from qgis import*
-from qgis.core import (QgsApplication, 
+from qgis.core import (Qgis, QgsApplication, 
     QgsProject, QgsWkbTypes, QgsPoint, 
     QgsPointXY, QgsFeature, QgsGeometry, 
     QgsField, QgsCoordinateReferenceSystem, 
@@ -11,7 +12,7 @@ from qgis.core import (QgsApplication,
 import gdal
 from gdalconst import *
 
-from .survey_dialog import survey_Dialog
+from .survey_dialog import survey_Dialog, tools_Dialog
 import os.path
 
 class ATNPlugin:
@@ -38,6 +39,7 @@ class ATNPlugin:
         self.iface.mapCanvas().renderComplete.connect(self.renderTest)
         
         self.dlg = survey_Dialog()                                  # Cargamos dialogo de archivo .ui
+        self.dlgtools = tools_Dialog(self.dlg)
 
         # Creamos acciones para los botones y comandos
         self.dlg.buttonRotationPrint.clicked.connect(self.rotation)
@@ -46,8 +48,7 @@ class ATNPlugin:
         self.dlg.buttonGpsDesactive.clicked.connect(self.cancel_Read)
         self.dlg.buttonSelectLayer.clicked.connect(self.selectLayer)
         self.dlg.buttonAbort.clicked.connect(self.Abort)
-        #self.dlg.pushTest.clicked.connect(self.test)
-
+        
         # Deshabilitar botones 
         self.dlg.buttonGpsActive.setEnabled(False)          
         self.dlg.buttonGpsDesactive.setEnabled(False)
@@ -57,11 +58,10 @@ class ATNPlugin:
         self.flatGPS    = False
         self.flatPAUSE  = True
 
-
         # Configurar temporizador
         self.timer = QTimer()
         self.timer.timeout.connect(self.point_Read)                 # Enlazamos temporizador con funcion objetivo
-    
+
 
     def unload(self):                                               # Rutina ejecutada al deshabilitar plugin en complementos
         # remove the plugin menu item and icon
@@ -75,11 +75,12 @@ class ATNPlugin:
 
     def run(self):                                                  # Rutina ejecuta al llamar plugin
 
-        if self.testSignal() == -1:                                  # Verificamos que este GPS conectado
+        if self.testSignal() == 0:                                  # Verificamos que este GPS conectado
             self.dlg.close()                                        # Si GPS no Conectado cerrar plugin
         
         else:
             self.dlg.show()                                         # Cargamos Plugin
+            #self.dlgtools.show()
 
 
     def selectLayer(self):
@@ -192,9 +193,9 @@ class ATNPlugin:
         self.connectionRegistry = QgsApplication.gpsConnectionRegistry()
         self.connectionList = self.connectionRegistry.connectionList()
 
-        if self.connectionList == []:                               # si gps no detectado
-            QMessageBox.information( self.iface.mainWindow(), "Error", "GPS no puede ser listado!\n\n" + "Revisar Conexion GPS", QMessageBox.Ok )
-            return -1
+        if self.connectionList == []:
+        	qgis.utils.iface.messageBar().pushMessage("Error"," Dispositivo GPS no encontrado. Verificar Informacion GPS",level=Qgis.Critical,duration=5)
+        	return -1
         else:
             return 1
 
@@ -208,6 +209,7 @@ class ATNPlugin:
         except:
             print("ok")
 
+        self.dlgtools.close()
         self.dlg.close()
 
 

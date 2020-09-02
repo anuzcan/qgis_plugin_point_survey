@@ -44,35 +44,6 @@
     <string>CanvasRot</string>
    </property>
   </widget>
-  <widget class="QWidget" name="verticalLayoutWidget_5">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>140</y>
-     <width>181</width>
-     <height>72</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout_5">
-    <item>
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Select Points Layer</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QgsMapLayerComboBox" name="mMapLayerComboBox"/>
-    </item>
-    <item>
-     <widget class="QPushButton" name="buttonSelectLayer">
-      <property name="text">
-       <string>Active Selected Layer</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
   <widget class="QPushButton" name="buttonAbort">
    <property name="geometry">
     <rect>
@@ -178,6 +149,41 @@
     </item>
    </layout>
   </widget>
+  <widget class="QGroupBox" name="groupBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>140</y>
+     <width>201</width>
+     <height>101</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Seleccion Capa Puntos</string>
+   </property>
+   <widget class="QWidget" name="verticalLayoutWidget_5">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>181</width>
+      <height>72</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_5">
+     <item>
+      <widget class="QgsMapLayerComboBox" name="mMapLayerComboBox"/>
+     </item>
+     <item>
+      <widget class="QPushButton" name="buttonSelectLayer">
+       <property name="text">
+        <string>Activar Capa Seleccionada</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
  </widget>
  <customwidgets>
   <customwidget>
@@ -187,7 +193,6 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>buttonSelectLayer</tabstop>
   <tabstop>buttonGpsActive</tabstop>
   <tabstop>buttonGPSPause</tabstop>
   <tabstop>buttonGpsDesactive</tabstop>
