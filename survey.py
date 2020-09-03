@@ -2,15 +2,13 @@ from PyQt5.QtWidgets import QAction, QMessageBox, QWidget, QPushButton
 from PyQt5.QtCore import QTimer, QVariant, Qt
 from PyQt5.QtGui import QIcon
 
-from qgis import*
+from qgis import utils
 from qgis.core import (Qgis, QgsApplication, 
     QgsProject, QgsWkbTypes, QgsPoint, 
     QgsPointXY, QgsFeature, QgsGeometry, 
     QgsField, QgsCoordinateReferenceSystem, 
     QgsCoordinateTransform)
 
-import gdal
-from gdalconst import *
 
 from .survey_dialog import survey_Dialog, tools_Dialog
 import os.path
@@ -33,22 +31,23 @@ class ATNPlugin:
 
         # Agregamos barra de herramientas e Icon en interfas de Qgis
         self.iface.addToolBarIcon(self.action)
-        self.iface.addPluginToMenu("&ATN herramientas", self.action)
+        self.iface.addPluginToMenu("&ATN Tools", self.action)
 
         # connect to signal renderComplete which is emitted when canvas rendering is done
         self.iface.mapCanvas().renderComplete.connect(self.renderTest)
         
         self.dlg = survey_Dialog()                                  # Cargamos dialogo de archivo .ui
-        self.dlgtools = tools_Dialog(self.dlg)
-
+        
         # Creamos acciones para los botones y comandos
+        self.dlg.buttonSetFilterPoints.clicked.connect(self.filters)
         self.dlg.buttonRotationPrint.clicked.connect(self.rotation)
         self.dlg.buttonGpsActive.clicked.connect(self.star_Read)
         self.dlg.buttonGPSPause.clicked.connect(self.pause_Read)
         self.dlg.buttonGpsDesactive.clicked.connect(self.cancel_Read)
         self.dlg.buttonSelectLayer.clicked.connect(self.selectLayer)
         self.dlg.buttonAbort.clicked.connect(self.Abort)
-        
+        self.dlg.pushtest.clicked.connect(self.showFix)
+
         # Deshabilitar botones 
         self.dlg.buttonGpsActive.setEnabled(False)          
         self.dlg.buttonGpsDesactive.setEnabled(False)
@@ -57,6 +56,8 @@ class ATNPlugin:
         # Flat de control
         self.flatGPS    = False
         self.flatPAUSE  = True
+        self.flatSelectedLayer = False
+
 
         # Configurar temporizador
         self.timer = QTimer()
@@ -65,7 +66,7 @@ class ATNPlugin:
 
     def unload(self):                                               # Rutina ejecutada al deshabilitar plugin en complementos
         # remove the plugin menu item and icon
-        self.iface.removePluginMenu("&ATN herramientas", self.action)
+        self.iface.removePluginMenu("&ATN Tools", self.action)
         self.iface.removeToolBarIcon(self.action)
 
         # disconnect form signal of the canvas
@@ -79,14 +80,18 @@ class ATNPlugin:
             self.dlg.close()                                        # Si GPS no Conectado cerrar plugin
         
         else:
+            self.dlg.comboBox_Fix.clear()
+            select_fixMode = ["Fix","Float","Single"]
+            self.dlg.comboBox_Fix.addItems(select_fixMode)
+
             self.dlg.show()                                         # Cargamos Plugin
-            #self.dlgtools.show()
 
 
     def selectLayer(self):
+
         self.layer_to_edit = QgsProject().instance().mapLayersByName(self.dlg.mMapLayerComboBox.currentText())[0] # Tomar capa seleccionada actualmente en comboBox
         #print (self.layer_to_edit.id())                            # Print capa ID
-        qgis.utils.iface.setActiveLayer(self.layer_to_edit)         # Seleccionamos como capa activa
+        utils.iface.setActiveLayer(self.layer_to_edit)         # Seleccionamos como capa activa
         self.layer_to_edit.startEditing()                           # Activar edicion capa
 
         if self.layer_to_edit.dataProvider().fieldNameIndex("DATE")  == -1:           # Comprobar que disponga campos adecuadas
@@ -94,7 +99,7 @@ class ATNPlugin:
                 QgsField(name = "ALT", type = QVariant.Double, typeName = "double", len = 4, prec = 3)])    # Agregamos campos si faltan
             self.layer_to_edit.updateFields()                                       # Actualizamos Campos
 
-        layerEPSG = qgis.utils.iface.activeLayer().crs().authid()   # Obtenemos EPSG de la capa Activa
+        layerEPSG = utils.iface.activeLayer().crs().authid()   # Obtenemos EPSG de la capa Activa
         #print(layerEPSG[layerEPSG.find(":") + 1 : ])               # Imprimimos EPSG
 
         crsSrc = QgsCoordinateReferenceSystem("EPSG:4326")                      # WGS 84
@@ -106,6 +111,23 @@ class ATNPlugin:
 
         self.dlg.buttonGpsActive.setEnabled(True)                   # Habilitar boton inicio
         self.dlg.buttonSelectLayer.setEnabled(False)
+        self.flatSelectedLayer = True
+
+
+    def filters(self):
+    	
+    	self.dlgtools = tools_Dialog(self.dlg)
+    	self.dlgtools.pushButton.clicked.connect(self.closeFilter)
+    	self.dlgtools.show()
+
+    def closeFilter(self):
+
+    	hdop = self.dlgtools.hdopSpinBox.value()
+    	vdop = self.dlgtools.vdopSpinBox.value()
+    	pdop = self.dlgtools.pdopSpinBox.value()
+    	self.dlgtools.close()
+    	del self.dlgtools
+
 
     def star_Read(self):                                            # Rutina inicializar toma de puntos
 
@@ -135,7 +157,8 @@ class ATNPlugin:
         self.dlg.buttonGPSPause.setEnabled(False)
         self.dlg.buttonSelectLayer.setEnabled(True)
 
-        self.layer_to_edit.commitChanges()                          # Detener edicion y almacenar cambios de la capa
+        if self.flatSelectedLayer == True:
+            self.layer_to_edit.commitChanges()                          # Detener edicion y almacenar cambios de la capa
 
         
     def point_Read(self):                                           # Rutina captura y almacenamiento de punto en capa
@@ -171,9 +194,7 @@ class ATNPlugin:
         #(GPSInformation.satellitesInView)
         #(GPSInformation.speed)
         #GPSInformation.status
-        
-        
-        #print(now) # PyQt5.QtCore.QDateTime(2020, 8, 28, 4, 2, 32, 0, PyQt5.QtCore.Qt.TimeSpec(1))
+       
         """
         
         if self.flatPAUSE == False:
@@ -185,7 +206,7 @@ class ATNPlugin:
             fet.setAttributes([now, GPSInformation.elevation])   # Asignamos propiedades 
             self.layer_to_edit.addFeatures([fet])                   # Agregamos entidad a la capa
 
-            qgis.utils.iface.mapCanvas().refresh()                  # Redibujamos capa con el punto agregado
+            utils.iface.mapCanvas().refresh()                  # Redibujamos capa con el punto agregado
 
     
     def testSignal(self):                                           # Rutina comprobar GPS Correctamento conectado
@@ -194,7 +215,7 @@ class ATNPlugin:
         self.connectionList = self.connectionRegistry.connectionList()
 
         if self.connectionList == []:
-        	qgis.utils.iface.messageBar().pushMessage("Error"," Dispositivo GPS no encontrado. Verificar Informacion GPS",level=Qgis.Critical,duration=5)
+        	utils.iface.messageBar().pushMessage("Error"," Device GPS not found. Check GPS Information",level=Qgis.Critical,duration=5)
         	return -1
         else:
             return 1
@@ -204,21 +225,21 @@ class ATNPlugin:
         self.timer.stop()
         self.cancel_Read()
 
-        try:
-            self.layer_to_edit.commitChanges()                      # Detener edicion y almacenar cambios de la capa
-        except:
-            print("ok")
-
-        self.dlgtools.close()
         self.dlg.close()
 
 
     def rotation(self):
 
-        rot = qgis.utils.iface.mapCanvas().rotation()
-        qgis.utils.iface.mapCanvas().setRotation(rot + 10)
+        rot = utils.iface.mapCanvas().rotation()
+        utils.iface.mapCanvas().setRotation(rot + 10)
     
 
     def renderTest(self, painter):
         # use painter for drawing to map canvas
         print("TestPlugin: renderTest called!")
+
+    def showFix(self):
+        self.dlg.lineEdit.setText("FIX")
+        self.dlg.lineEdit.setStyleSheet("background-color: rgb(255, 0, 0);")
+            
+        print("test")

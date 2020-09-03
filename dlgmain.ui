@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>214</width>
-    <height>450</height>
+    <width>221</width>
+    <height>451</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -26,7 +26,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>RTK Recoleccion Puntos</string>
+   <string>RTK Points</string>
   </property>
   <property name="windowOpacity">
    <double>0.950000000000000</double>
@@ -35,8 +35,8 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>400</y>
-     <width>75</width>
+     <y>420</y>
+     <width>51</width>
      <height>23</height>
     </rect>
    </property>
@@ -47,8 +47,8 @@
   <widget class="QPushButton" name="buttonAbort">
    <property name="geometry">
     <rect>
-     <x>120</x>
-     <y>400</y>
+     <x>150</x>
+     <y>420</y>
      <width>75</width>
      <height>23</height>
     </rect>
@@ -57,132 +57,256 @@
     <string>Close</string>
    </property>
   </widget>
-  <widget class="QWidget" name="formLayoutWidget">
+  <widget class="QToolBox" name="toolBox">
    <property name="geometry">
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>160</width>
-     <height>119</height>
-    </rect>
-   </property>
-   <layout class="QFormLayout" name="formLayout">
-    <item row="0" column="0">
-     <widget class="QLabel" name="label_3">
-      <property name="text">
-       <string>Latitud</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="label_4">
-      <property name="text">
-       <string>Longitud</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="1">
-     <widget class="QLineEdit" name="lineLongitude"/>
-    </item>
-    <item row="2" column="0">
-     <widget class="QLabel" name="label_5">
-      <property name="text">
-       <string>Elevacion</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="1">
-     <widget class="QLineEdit" name="lineElevation"/>
-    </item>
-    <item row="3" column="0">
-     <widget class="QLabel" name="label_7">
-      <property name="text">
-       <string>FIX</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="1">
-     <widget class="QLineEdit" name="lineFix"/>
-    </item>
-    <item row="0" column="1">
-     <widget class="QLineEdit" name="lineLatitude"/>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="verticalLayoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>310</y>
-     <width>181</width>
-     <height>61</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <item>
-       <widget class="QPushButton" name="buttonGpsActive">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string>Star Survey</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="buttonGPSPause">
-        <property name="text">
-         <string>Pause Survey</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <widget class="QPushButton" name="buttonGpsDesactive">
-      <property name="text">
-       <string>Finish Survey</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QGroupBox" name="groupBox">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>140</y>
      <width>201</width>
-     <height>101</height>
+     <height>401</height>
     </rect>
    </property>
-   <property name="title">
-    <string>Seleccion Capa Puntos</string>
+   <property name="currentIndex">
+    <number>0</number>
    </property>
-   <widget class="QWidget" name="verticalLayoutWidget_5">
+   <widget class="QWidget" name="page">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>20</y>
-      <width>181</width>
-      <height>72</height>
+      <x>0</x>
+      <y>0</y>
+      <width>201</width>
+      <height>347</height>
      </rect>
     </property>
-    <layout class="QVBoxLayout" name="verticalLayout_5">
-     <item>
-      <widget class="QgsMapLayerComboBox" name="mMapLayerComboBox"/>
-     </item>
-     <item>
-      <widget class="QPushButton" name="buttonSelectLayer">
-       <property name="text">
-        <string>Activar Capa Seleccionada</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    <attribute name="label">
+     <string>Continuous Survey</string>
+    </attribute>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>201</width>
+       <height>91</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Select Point Layer</string>
+     </property>
+     <widget class="QWidget" name="verticalLayoutWidget_5">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>20</y>
+        <width>181</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <item>
+        <widget class="QgsMapLayerComboBox" name="mMapLayerComboBox"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="buttonSelectLayer">
+         <property name="text">
+          <string>Activate Selected Layer</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>210</y>
+       <width>201</width>
+       <height>121</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Survey</string>
+     </property>
+     <widget class="QWidget" name="verticalLayoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>20</y>
+        <width>181</width>
+        <height>91</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <widget class="QPushButton" name="buttonGpsActive">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="text">
+            <string>Star Survey</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="buttonGPSPause">
+           <property name="text">
+            <string>Pause Survey</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Correction: </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="lineEdit">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="cursor">
+            <cursorShape>CrossCursor</cursorShape>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QPushButton" name="buttonGpsDesactive">
+         <property name="text">
+          <string>Finish Survey</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QGroupBox" name="groupBox_3">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>100</y>
+       <width>201</width>
+       <height>101</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Filters</string>
+     </property>
+     <widget class="QWidget" name="verticalLayoutWidget_2">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>20</y>
+        <width>181</width>
+        <height>71</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QComboBox" name="comboBox_Fix"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="buttonSetFilterPoints">
+         <property name="text">
+          <string>Detailed Filter</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
    </widget>
+   <widget class="QWidget" name="page_2">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>100</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Point Survey</string>
+    </attribute>
+    <widget class="QWidget" name="formLayoutWidget">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>181</width>
+       <height>119</height>
+      </rect>
+     </property>
+     <layout class="QFormLayout" name="formLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Latitud</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>Longitud</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="lineLongitude"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>Elevation</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="lineElevation"/>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_7">
+        <property name="text">
+         <string>FIX</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLineEdit" name="lineFix"/>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="lineLatitude"/>
+      </item>
+     </layout>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QPushButton" name="pushtest">
+   <property name="geometry">
+    <rect>
+     <x>70</x>
+     <y>420</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>PushButton</string>
+   </property>
   </widget>
  </widget>
  <customwidgets>
