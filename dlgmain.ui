@@ -31,23 +31,10 @@
   <property name="windowOpacity">
    <double>0.950000000000000</double>
   </property>
-  <widget class="QPushButton" name="buttonRotationPrint">
+  <widget class="QPushButton" name="buttonClose_plugin">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>420</y>
-     <width>51</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>CanvasRot</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="buttonAbort">
-   <property name="geometry">
-    <rect>
-     <x>150</x>
+     <x>140</x>
      <y>420</y>
      <width>75</width>
      <height>23</height>
@@ -234,8 +221,8 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>100</width>
-      <height>30</height>
+      <width>201</width>
+      <height>347</height>
      </rect>
     </property>
     <attribute name="label">
@@ -293,20 +280,46 @@
       </item>
      </layout>
     </widget>
+    <widget class="QPushButton" name="pushtest">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>140</y>
+       <width>75</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Test Button</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_2">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>180</y>
+       <width>171</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>This Section is in Construction</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="buttonRotationPrint">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>230</y>
+       <width>51</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>CanvasRot</string>
+     </property>
+    </widget>
    </widget>
-  </widget>
-  <widget class="QPushButton" name="pushtest">
-   <property name="geometry">
-    <rect>
-     <x>70</x>
-     <y>420</y>
-     <width>75</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>PushButton</string>
-   </property>
   </widget>
  </widget>
  <customwidgets>
@@ -325,7 +338,7 @@
   <tabstop>lineElevation</tabstop>
   <tabstop>lineFix</tabstop>
   <tabstop>buttonRotationPrint</tabstop>
-  <tabstop>buttonAbort</tabstop>
+  <tabstop>buttonClose_plugin</tabstop>
  </tabstops>
  <resources/>
  <connections/>

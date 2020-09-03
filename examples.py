@@ -9,3 +9,5 @@ pt1 = self.xform.transform(QgsPointXY(GPSInformation.longitude, GPSInformation.l
 print("Transformed point:", pt1)
 pt2 = xform.transform(pt1, QgsCoordinateTransform.ReverseTransform)    # Proceso inverso de reproyeccion
 print("Transformed back:", pt2)
+
+print (self.layer_to_edit.id())                            # Print capa ID

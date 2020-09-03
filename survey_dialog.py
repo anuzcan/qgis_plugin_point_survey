@@ -16,8 +16,8 @@ class survey_Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.setupUi(self)
     
     def closeEvent(self,event):
-        reply = QtWidgets.QMessageBox.question(self,'Finalizar',
-            'Esta seguro que desea finalizar captura?', 
+        reply = QtWidgets.QMessageBox.question(self,'Close',
+            "Youre sure you want to get out?", 
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
 
         if reply == QtWidgets.QMessageBox.Yes:
