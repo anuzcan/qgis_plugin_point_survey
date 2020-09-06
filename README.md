@@ -1,4 +1,4 @@
-# QUICK SURVEY RTK QGIS PLUGIN (Not released) ![](icon.png)
+# QUICK SURVEY RTK QGIS PLUGIN (beta) ![](icon.png)
 
 Quick_survey_RTK is a Qgis plugin for quick collect points in field
 
@@ -20,12 +20,12 @@ This tool will help producers to implement current technologies in more efficien
     C:\Users\username\AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins\
 
 - [x] Configure access to GPS information
-- [ ] Set point filters
-- [ ] Debug interface
+- [X] Set point filters
+- [X] Debug interface
 - [ ] Field tests
 - [ ] Configure raster layer creation
 - [ ] Project area calculation
 
 ### Version Control
 
-- 0.5 not useful
+- 0.95 beta
