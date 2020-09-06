@@ -78,7 +78,7 @@ class ATNPlugin:
 
     def unload(self):                                               # Rutina ejecutada al deshabilitar plugin en complementos
         # remove the plugin menu item and icon
-        self.iface.removePluginMenu("&ATN Tools", self.action)
+        self.iface.removePluginMenu("&Survey Tools", self.action)
         self.iface.removeToolBarIcon(self.action)
 
         del self.action
