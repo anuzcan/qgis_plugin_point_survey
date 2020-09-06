@@ -7,7 +7,7 @@ from qgis.core import (Qgis, QgsApplication,
     QgsProject, QgsWkbTypes, QgsPoint, 
     QgsPointXY, QgsFeature, QgsGeometry, 
     QgsField, QgsCoordinateReferenceSystem, 
-    QgsCoordinateTransform)
+    QgsCoordinateTransform, QgsSettings)
 
 
 from .survey_dialog import survey_Dialog, tools_Dialog
@@ -23,7 +23,7 @@ class ATNPlugin:
         plg_dir = os.path.dirname(__file__)                         # Obtener ruta absoluta de plugis, necesaria para acceder recursos
         icon_path = os.path.join(plg_dir, "icon.png")               # Leemos icon
 
-        self.action = QAction(QIcon(icon_path), "ATN", self.iface.mainWindow())
+        self.action = QAction(QIcon(icon_path), "Quick Survey Plugin", self.iface.mainWindow())
         self.action.setObjectName("RunAction")
         self.action.setWhatsThis("Configuration for RTK plugin")
         self.action.setStatusTip("Plugis RTK Survey")
@@ -31,10 +31,8 @@ class ATNPlugin:
 
         # Agregamos barra de herramientas e Icon en interfas de Qgis
         self.iface.addToolBarIcon(self.action)
-        self.iface.addPluginToMenu("&ATN Tools", self.action)
+        self.iface.addPluginToMenu("&Survey Tools", self.action)
 
-        # connect to signal renderComplete which is emitted when canvas rendering is done
-        self.iface.mapCanvas().renderComplete.connect(self.renderTest)
         
         self.dlg = survey_Dialog()                                  # Cargamos dialogo de archivo .ui
         
@@ -47,8 +45,7 @@ class ATNPlugin:
         self.dlg.buttonSelectLayer.clicked.connect(self.selectLayer)
         self.dlg.buttonClose_plugin.clicked.connect(self.close_plugin)
         
-        #self.dlg.pushtest.clicked.connect(self.test)
-
+        
         # Deshabilitar botones 
         self.dlg.buttonSetFilterPoints.setEnabled(False)
         self.dlg.buttonSelectLayer.setEnabled(False)
@@ -61,6 +58,7 @@ class ATNPlugin:
         self.flatPAUSE  = True
         self.flatSelectedLayer = False
 
+
         select_fixMode = ["FIX","FLOAT","SINGLE"]
         self.dlg.comboBox_Fix.addItems(select_fixMode)
 
@@ -68,6 +66,14 @@ class ATNPlugin:
         self.timer = QTimer()
         self.timer.timeout.connect(self.read_Device)                 # Enlazamos temporizador con funcion objetivo
         
+    def read_setting(self):
+        s = QgsSettings()
+        self.plugin_name = s.value("quick_survey_plugin/plugin_name")
+
+
+    def store_setting(self):
+        s = QgsSettings()
+        s.setValue("quick_survey_plugin/plugin_name", "Quick Survey Plugin")
 
 
     def unload(self):                                               # Rutina ejecutada al deshabilitar plugin en complementos
@@ -75,13 +81,11 @@ class ATNPlugin:
         self.iface.removePluginMenu("&ATN Tools", self.action)
         self.iface.removeToolBarIcon(self.action)
 
-        # disconnect form signal of the canvas
-        self.iface.mapCanvas().renderComplete.disconnect(self.renderTest)
         del self.action
-
 
     def run(self):                                                  # Rutina ejecuta al llamar plugin
 
+        self.read_setting()
         self.flatGPS = self.testSignal()
 
         if self.flatGPS == True:                                  # Verificamos que este GPS conectado
@@ -97,9 +101,10 @@ class ATNPlugin:
         self.connectionList = self.connectionRegistry.connectionList()
 
         if self.connectionList == []:
-            utils.iface.messageBar().pushMessage("Error"," Device GPS not found. Check GPS Information",level=Qgis.Critical,duration=5)
+            utils.iface.messageBar().pushMessage("Error "," Device GPS not found. Check GPS Information",level=Qgis.Critical,duration=5)
             return -1
         else:
+            utils.iface.messageBar().pushMessage("OK "," Device GPS found",level=Qgis.Info,duration=5)
             return 1
 
 
@@ -110,45 +115,30 @@ class ATNPlugin:
         self.dlg.lineLatitude.setText(str(GPSInformation.latitude))
         self.dlg.lineLongitude.setText(str(GPSInformation.longitude))
         self.dlg.lineElevation.setText(str(GPSInformation.elevation))
-        self.dlg.lineFix.setText(str(GPSInformation.fixMode))
+        self.dlg.lineFix.setText(str(GPSInformation.quality))
 
-        self.showFix(self.dlg,str(GPSInformation.fixMode))
-
-        # Listado de Informacion disponible del GPS
-        #GPSInformation.latitude
-        #GPSInformation.longitude
-        #GPSInformation.elevation
-        #GPSInformation.utcDateTime
-        """
-        # https://en.wikipedia.org/wiki/Dilution_of_precision_(navigation)
-        print('hdop: ',GPSInformation.hdop)     # horizontal dilution of precision
-        print('vdop: ',GPSInformation.vdop)     # vertical dilution of precision
-        print('pdop: ',GPSInformation.pdop)     # position (3D) dilution of precision
-        print('quality: ',GPSInformation.quality)  # Calidad
-        
-        print('hacc: ',GPSInformation.hacc)          
-        print('vacc: ',GPSInformation.vacc)
-        print('fixMode: ',GPSInformation.fixMode)
-
-        print('direction: ',GPSInformation.direction)
-        #
-        print('fixType: ',GPSInformation.fixType)
-        #(GPSInformation.satInfoComplete)
-        #(GPSInformation.satPrn)
-        #(GPSInformation.satellitesInView)
-        #(GPSInformation.speed)
-        #GPSInformation.status
+        self.showFix(self.dlg.lineEdit,str(GPSInformation.quality))
+        quality = GPSInformation.quality
        
-        """
         
         if self.flatPAUSE == False:
-                
+
             pt1 = self.xform.transform(QgsPointXY(GPSInformation.longitude, GPSInformation.latitude))      # Obtener corrdenadas reproyectadas a la capa destino del punto
+            fet = QgsFeature()
+            fet.setGeometry(QgsGeometry.fromPointXY(pt1))
+            fet.setAttributes([now, GPSInformation.elevation])
+
+            if (self.fix_filter == '1'):
+                if (quality == 4 or quality == 5 or quality == 1):
+                    self.layer_to_edit.addFeatures([fet])
             
-            fet = QgsFeature()                                      # Instancia de entidad
-            fet.setGeometry(QgsGeometry.fromPointXY(pt1))           # Asignamos geometria
-            fet.setAttributes([now, GPSInformation.elevation])   # Asignamos propiedades 
-            self.layer_to_edit.addFeatures([fet])                   # Agregamos entidad a la capa
+            elif (self.fix_filter == '5'):
+                if (quality == 4 or quality == 5):
+                    self.layer_to_edit.addFeatures([fet])
+            
+            elif (self.fix_filter == '4'):
+                if (quality == 4):
+                    self.layer_to_edit.addFeatures([fet])    
 
             utils.iface.mapCanvas().refresh()                  # Redibujamos capa con el punto agregado
 
@@ -166,7 +156,6 @@ class ATNPlugin:
             self.layer_to_edit.updateFields()                                       # Actualizamos Campos
 
         layerEPSG = utils.iface.activeLayer().crs().authid()   # Obtenemos EPSG de la capa Activa
-        #print(layerEPSG[layerEPSG.find(":") + 1 : ])               # Imprimimos EPSG
 
         self.layer_to_edit.commitChanges()                      # Despues de actualizar los campos detenemos edicion de capa
 
@@ -179,7 +168,8 @@ class ATNPlugin:
         self.dlg.buttonSelectLayer.setEnabled(False)
         self.flatSelectedLayer = True
 
-
+######################################################################
+    #On Construction
     def filters(self):
     	
     	self.dlgtools = tools_Dialog(self.dlg)
@@ -194,8 +184,26 @@ class ATNPlugin:
     	self.dlgtools.close()
     	del self.dlgtools
 
+    def rotation(self):
+
+        rot = utils.iface.mapCanvas().rotation()
+        utils.iface.mapCanvas().setRotation(rot + 10)
+    
+######################################################################
 
     def star_Read(self):                                            # Rutina inicializar toma de puntos
+
+        self.fix_filter = self.dlg.comboBox_Fix.currentText()
+        
+        if self.fix_filter == 'FIX':
+            self.fix_filter = '4'
+            
+        elif self.fix_filter == 'FLOAT':
+            self.fix_filter = '5'
+            
+        elif self.fix_filter == 'SINGLE':
+            self.fix_filter = '1'
+            
 
         self.layer_to_edit.startEditing()
         self.flatPAUSE = False
@@ -229,37 +237,24 @@ class ATNPlugin:
             
     def close_plugin(self):
 
+        self.store_setting()
+
         self.end_Read()
         if self.flatGPS == True:
             self.timer.stop()
         self.dlg.close()
 
-
-    def rotation(self):
-
-        rot = utils.iface.mapCanvas().rotation()
-        utils.iface.mapCanvas().setRotation(rot + 10)
-    
-
-    def renderTest(self, painter):
-        # use painter for drawing to map canvas
-        print("TestPlugin: renderTest called!")
-
     
     def showFix(self,parent,fix):
 
-        parent.lineEdit.setStyleSheet("color: rgb(255, 255, 255);")
-        parent.lineEdit.setText(fix)
+        if fix == "1":
+            parent.setText('SINGLE')
+            parent.setStyleSheet("background-color: rgb(255, 0, 0);color: rgb(255, 255, 255);")
+        if fix == "5":
+            parent.setText('FLOAT')
+            parent.setStyleSheet("background-color: rgb(255, 128, 0);color: rgb(255, 255, 255);")
+        if fix == "4":
+            parent.setText('FIX')
+            parent.setStyleSheet("background-color: rgb(0, 255, 0);color: rgb(255, 255, 255);")
 
-        if fix == "FIX":
-            parent.lineEdit.setStyleSheet("background-color: rgb(0, 255, 0);")
-        if fix == "FLOAT":
-            parent.lineEdit.setStyleSheet("background-color: rgb(255, 128, 0);")
-        if fix == "SINGLE":
-            parent.lineEdit.setStyleSheet("background-color: rgb(255, 0, 0);")
-
-    """
-    def test(self):
-        fix = self.dlg.comboBox_Fix.currentText()
-        self.showFix(self.dlg,fix)
-    """
+    
