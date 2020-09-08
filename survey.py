@@ -38,17 +38,20 @@ class ATNPlugin:
         
         # Creamos acciones para los botones y comandos
         self.dlg.buttonSetFilterPoints.clicked.connect(self.filters)
-        self.dlg.buttonRotationPrint.clicked.connect(self.rotation)
+        self.dlg.buttonRotationSet.clicked.connect(self.rotation)
         self.dlg.buttonGpsActive.clicked.connect(self.star_Read)
         self.dlg.buttonGPSPause.clicked.connect(self.pause_Read)
         self.dlg.buttonGpsDesactive.clicked.connect(self.end_Read)
         self.dlg.buttonSelectLayer.clicked.connect(self.selectLayer)
         self.dlg.buttonClose_plugin.clicked.connect(self.close_plugin)
-        
+        self.dlg.zoomInbutton.clicked.connect(self.zoomInMapCanvas)
+        self.dlg.zoomOutbutton.clicked.connect(self.zoomOutMapCanvas)
+        self.dlg.savePointButton.clicked.connect(self.savePoint)
         
         # Deshabilitar botones 
         self.dlg.buttonSetFilterPoints.setEnabled(False)
         self.dlg.buttonSelectLayer.setEnabled(False)
+        #self.dlg.buttonSelectLayer.setEnabled(True)
         self.dlg.buttonGpsActive.setEnabled(False)          
         self.dlg.buttonGpsDesactive.setEnabled(False)
         self.dlg.buttonGPSPause.setEnabled(False)
@@ -57,6 +60,7 @@ class ATNPlugin:
         self.flatGPS    = False
         self.flatPAUSE  = True
         self.flatSelectedLayer = False
+        self.flatRotationMap = False
 
 
         select_fixMode = ["FIX","FLOAT","SINGLE"]
@@ -94,7 +98,12 @@ class ATNPlugin:
 
         self.dlg.show()                                         # Cargamos Plugin
 
-    
+    def zoomInMapCanvas(self):
+        utils.iface.mapCanvas().zoomByFactor(0.9)
+
+    def zoomOutMapCanvas(self):
+        utils.iface.mapCanvas().zoomByFactor(1.1)
+
     def testSignal(self):                                           # Rutina comprobar GPS Correctamento conectado
         # Registro del GPS
         self.connectionRegistry = QgsApplication.gpsConnectionRegistry()
@@ -112,9 +121,9 @@ class ATNPlugin:
         
         GPSInformation = self.connectionList[0].currentGPSInformation()
         now = GPSInformation.utcDateTime.currentDateTime().toString(Qt.TextDate)[5:]
-        self.dlg.lineLatitude.setText(str(GPSInformation.latitude))
-        self.dlg.lineLongitude.setText(str(GPSInformation.longitude))
-        self.dlg.lineElevation.setText(str(GPSInformation.elevation))
+        self.dlg.lineLatitude.setText(str(GPSInformation.latitude)[:8])
+        self.dlg.lineLongitude.setText(str(GPSInformation.longitude)[:8])
+        self.dlg.lineElevation.setText(str(GPSInformation.elevation)[:8])
         self.dlg.lineFix.setText(str(GPSInformation.quality))
 
         self.showFix(self.dlg.lineEdit,str(GPSInformation.quality))
@@ -126,7 +135,7 @@ class ATNPlugin:
             pt1 = self.xform.transform(QgsPointXY(GPSInformation.longitude, GPSInformation.latitude))      # Obtener corrdenadas reproyectadas a la capa destino del punto
             fet = QgsFeature()
             fet.setGeometry(QgsGeometry.fromPointXY(pt1))
-            fet.setAttributes([now, GPSInformation.elevation])
+            fet.setAttributes([self.fieldIndex,now, GPSInformation.elevation])
 
             if (self.fix_filter == '1'):
                 if (quality == 4 or quality == 5 or quality == 1):
@@ -141,6 +150,7 @@ class ATNPlugin:
                     self.layer_to_edit.addFeatures([fet])    
 
             utils.iface.mapCanvas().refresh()                  # Redibujamos capa con el punto agregado
+            self.fieldIndex = self.fieldIndex + 1
 
 
     def selectLayer(self):
@@ -150,10 +160,17 @@ class ATNPlugin:
         utils.iface.setActiveLayer(self.layer_to_edit)         # Seleccionamos como capa activa
         self.layer_to_edit.startEditing()                           # Activar edicion capa
 
-        if self.layer_to_edit.dataProvider().fieldNameIndex("DATE")  == -1:           # Comprobar que disponga campos adecuadas
-            self.layer_to_edit.dataProvider().addAttributes([QgsField(name = "DATE", type = QVariant.String, len = 20), 
-                QgsField(name = "ALT", type = QVariant.Double, typeName = "double", len = 4, prec = 3)])    # Agregamos campos si faltan
-            self.layer_to_edit.updateFields()                                       # Actualizamos Campos
+        if self.layer_to_edit.dataProvider().fieldNameIndex("id")  == 0:           # Comprobar que disponga campos adecuadas
+            self.layer_to_edit.dataProvider().addAttributes([QgsField(name = "date", type = QVariant.String, len = 20), 
+                QgsField(name = "alt", type = QVariant.Double, typeName = "double", len = 7, prec = 3)])    # Agregamos campos si faltan
+
+        else:
+            self.layer_to_edit.dataProvider().addAttributes([QgsField(name = "id", type = QVariant.Double, len = 10),
+                QgsField(name = "date", type = QVariant.String, len = 20), 
+                QgsField(name = "alt", type = QVariant.Double, typeName = "double", len = 7, prec = 3)])    # Agregamos campos si faltan
+            
+
+        self.layer_to_edit.updateFields()                                       # Actualizamos Campos
 
         layerEPSG = utils.iface.activeLayer().crs().authid()   # Obtenemos EPSG de la capa Activa
 
@@ -167,6 +184,7 @@ class ATNPlugin:
         self.dlg.buttonGpsActive.setEnabled(True)                   # Habilitar boton inicio
         self.dlg.buttonSelectLayer.setEnabled(False)
         self.flatSelectedLayer = True
+        self.fieldIndex = 0
 
 ######################################################################
     #On Construction
@@ -186,8 +204,18 @@ class ATNPlugin:
 
     def rotation(self):
 
-        rot = utils.iface.mapCanvas().rotation()
-        utils.iface.mapCanvas().setRotation(rot + 10)
+        if self.flatRotationMap == False:
+            self.flatRotationMap = True
+            rot = utils.iface.mapCanvas().rotation()
+            utils.iface.mapCanvas().setRotation(rot + 10)
+        else:
+            self.flatRotationMap = False
+
+    def savePoint(self):
+
+        self.dlg.progressBar.setValue(10)
+
+        print(self.dlg.linePointName.text())
     
 ######################################################################
 
