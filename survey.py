@@ -51,20 +51,22 @@ class ATNPlugin:
         # Deshabilitar botones 
         self.dlg.buttonSetFilterPoints.setEnabled(False)
         self.dlg.buttonSelectLayer.setEnabled(False)
-        #self.dlg.buttonSelectLayer.setEnabled(True)
         self.dlg.buttonGpsActive.setEnabled(False)          
-        self.dlg.buttonGpsDesactive.setEnabled(False)
         self.dlg.buttonGPSPause.setEnabled(False)
+        self.dlg.buttonGpsDesactive.setEnabled(False)
         
         # Flat de control
         self.flatGPS    = False
         self.flatPAUSE  = True
         self.flatSelectedLayer = False
         self.flatRotationMap = False
+        self.countPointCollect = 0
 
 
         select_fixMode = ["FIX","FLOAT","SINGLE"]
         self.dlg.comboBox_Fix.addItems(select_fixMode)
+
+        self.dlg.linePointName.setText('pointN')
 
         # Configurar temporizador
         self.timer = QTimer()
@@ -157,34 +159,41 @@ class ATNPlugin:
 
         self.layer_to_edit = QgsProject().instance().mapLayersByName(self.dlg.mMapLayerComboBox.currentText())[0] # Tomar capa seleccionada actualmente en comboBox
         
-        utils.iface.setActiveLayer(self.layer_to_edit)         # Seleccionamos como capa activa
-        self.layer_to_edit.startEditing()                           # Activar edicion capa
+        layer_type = self.layer_to_edit.geometryType()
 
-        if self.layer_to_edit.dataProvider().fieldNameIndex("id")  == 0:           # Comprobar que disponga campos adecuadas
-            self.layer_to_edit.dataProvider().addAttributes([QgsField(name = "date", type = QVariant.String, len = 20), 
-                QgsField(name = "alt", type = QVariant.Double, typeName = "double", len = 7, prec = 3)])    # Agregamos campos si faltan
+        if layer_type == QgsWkbTypes.PointGeometry:
 
-        else:
-            self.layer_to_edit.dataProvider().addAttributes([QgsField(name = "id", type = QVariant.Double, len = 10),
-                QgsField(name = "date", type = QVariant.String, len = 20), 
-                QgsField(name = "alt", type = QVariant.Double, typeName = "double", len = 7, prec = 3)])    # Agregamos campos si faltan
+            utils.iface.setActiveLayer(self.layer_to_edit)         # Seleccionamos como capa activa
+            self.layer_to_edit.startEditing()                           # Activar edicion capa
+
+            if self.layer_to_edit.dataProvider().fieldNameIndex("id")  == 0:           # Comprobar que disponga campos adecuadas
+                self.layer_to_edit.dataProvider().addAttributes([QgsField(name = "date", type = QVariant.String, len = 20), 
+                    QgsField(name = "alt", type = QVariant.Double, typeName = "double", len = 7, prec = 3)])    # Agregamos campos si faltan
+
+            else:
+                self.layer_to_edit.dataProvider().addAttributes([QgsField(name = "id", type = QVariant.Double, len = 10),
+                    QgsField(name = "date", type = QVariant.String, len = 20), 
+                    QgsField(name = "alt", type = QVariant.Double, typeName = "double", len = 7, prec = 3)])    # Agregamos campos si faltan
             
 
-        self.layer_to_edit.updateFields()                                       # Actualizamos Campos
+            self.layer_to_edit.updateFields()                                       # Actualizamos Campos
 
-        layerEPSG = utils.iface.activeLayer().crs().authid()   # Obtenemos EPSG de la capa Activa
+            layerEPSG = utils.iface.activeLayer().crs().authid()   # Obtenemos EPSG de la capa Activa
 
-        self.layer_to_edit.commitChanges()                      # Despues de actualizar los campos detenemos edicion de capa
+            self.layer_to_edit.commitChanges()                      # Despues de actualizar los campos detenemos edicion de capa
 
-        crsSrc = QgsCoordinateReferenceSystem("EPSG:4326")                      # WGS 84
-        crsDest = QgsCoordinateReferenceSystem(layerEPSG)                       # WGS 84 a WGS de la capa seleccionada
-        transformContext = QgsProject.instance().transformContext()             # Crear instancia de tranformacion
-        self.xform = QgsCoordinateTransform(crsSrc, crsDest, transformContext)  # Crear formulario transformacion
+            crsSrc = QgsCoordinateReferenceSystem("EPSG:4326")                      # WGS 84
+            crsDest = QgsCoordinateReferenceSystem(layerEPSG)                       # WGS 84 a WGS de la capa seleccionada
+            transformContext = QgsProject.instance().transformContext()             # Crear instancia de tranformacion
+            self.xform = QgsCoordinateTransform(crsSrc, crsDest, transformContext)  # Crear formulario transformacion
          
-        self.dlg.buttonGpsActive.setEnabled(True)                   # Habilitar boton inicio
-        self.dlg.buttonSelectLayer.setEnabled(False)
-        self.flatSelectedLayer = True
-        self.fieldIndex = 0
+            self.dlg.buttonGpsActive.setEnabled(True)                   # Habilitar boton inicio
+            self.dlg.buttonSelectLayer.setEnabled(False)
+            self.flatSelectedLayer = True
+            self.fieldIndex = 0
+        else:
+            utils.iface.messageBar().pushMessage("Warning "," The select layer is not point layer",level=Qgis.Warning,duration=5)
+
 
 ######################################################################
     #On Construction
@@ -213,10 +222,27 @@ class ATNPlugin:
 
     def savePoint(self):
 
-        self.dlg.progressBar.setValue(10)
+        time = self.dlg.spinBoxTime.value()
+        pointName = self.dlg.linePointName.text()
+        pointCount = self.countPointCollect
+        filterPoint = self.dlg.linePointFilter.text()
+        
+        print(time,pointName)
 
-        print(self.dlg.linePointName.text())
-    
+        self.layer_for_point = QgsProject().instance().mapLayersByName(self.dlg.mMapLayer_for_point.currentText())[0]
+        layer_type = self.layer_for_point.geometryType()
+
+        if layer_type == QgsWkbTypes.PointGeometry:
+            print('Point Layer')
+            print(self.layer_for_point.id())
+            nameFeaturePoint = pointName + str(pointCount)
+            print(nameFeaturePoint)
+            self.dlg.progressBar.setValue(self.countPointCollect)
+            self.countPointCollect = self.countPointCollect + 1
+            
+        else:
+            utils.iface.messageBar().pushMessage("Warning "," The select layer is not point layer",level=Qgis.Warning,duration=5)
+
 ######################################################################
 
     def star_Read(self):                                            # Rutina inicializar toma de puntos
