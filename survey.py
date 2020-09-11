@@ -54,19 +54,28 @@ class ATNPlugin:
         self.dlg.buttonGpsActive.setEnabled(False)          
         self.dlg.buttonGPSPause.setEnabled(False)
         self.dlg.buttonGpsDesactive.setEnabled(False)
+        self.dlg.savePointButton.setEnabled(False)
         
         # Flat de control
         self.flatGPS    = False
         self.flatPAUSE  = True
         self.flatSelectedLayer = False
         self.flatRotationMap = False
+        
+        self.flatSurveyPoint = False
         self.countPointCollect = 0
+        self.timeSurveyPoint = 0
 
+        self.latPoint = []
+        self.lonPoint = []
+        self.altPoint = []
 
         select_fixMode = ["FIX","FLOAT","SINGLE"]
         self.dlg.comboBox_Fix.addItems(select_fixMode)
 
-        self.dlg.linePointName.setText('pointN')
+        self.dlg.linePointName.setText('pointName')
+
+        self.dlg.progressBar.setValue(0)
 
         # Configurar temporizador
         self.timer = QTimer()
@@ -96,6 +105,7 @@ class ATNPlugin:
 
         if self.flatGPS == True:                                  # Verificamos que este GPS conectado
             self.dlg.buttonSelectLayer.setEnabled(True)
+            self.dlg.savePointButton.setEnabled(True)
             self.timer.start(1000)
 
         self.dlg.show()                                         # Cargamos Plugin
@@ -123,8 +133,8 @@ class ATNPlugin:
         
         GPSInformation = self.connectionList[0].currentGPSInformation()
         now = GPSInformation.utcDateTime.currentDateTime().toString(Qt.TextDate)[5:]
-        self.dlg.lineLatitude.setText(str(GPSInformation.latitude)[:8])
-        self.dlg.lineLongitude.setText(str(GPSInformation.longitude)[:8])
+        self.dlg.lineLatitude.setText(str(GPSInformation.latitude)[:11])
+        self.dlg.lineLongitude.setText(str(GPSInformation.longitude)[:11])
         self.dlg.lineElevation.setText(str(GPSInformation.elevation)[:8])
         self.dlg.lineFix.setText(str(GPSInformation.quality))
 
@@ -137,7 +147,7 @@ class ATNPlugin:
             pt1 = self.xform.transform(QgsPointXY(GPSInformation.longitude, GPSInformation.latitude))      # Obtener corrdenadas reproyectadas a la capa destino del punto
             fet = QgsFeature()
             fet.setGeometry(QgsGeometry.fromPointXY(pt1))
-            fet.setAttributes([self.fieldIndex,now, GPSInformation.elevation])
+            fet.setAttributes([self.countPointCollect, now, GPSInformation.elevation])
 
             if (self.fix_filter == '1'):
                 if (quality == 4 or quality == 5 or quality == 1):
@@ -152,8 +162,33 @@ class ATNPlugin:
                     self.layer_to_edit.addFeatures([fet])    
 
             utils.iface.mapCanvas().refresh()                  # Redibujamos capa con el punto agregado
-            self.fieldIndex = self.fieldIndex + 1
+            self.countPointCollect = self.countPointCollect + 1
 
+
+        if self.flatSurveyPoint == True:
+            
+            if self.timeSurveyPoint <= -1:
+
+                self.latPoint.clear()
+                self.lonPoint.clear()
+                self.altPoint.clear()
+
+                self.dlg.progressBar.setValue(0)
+                self.dlg.savePointButton.setEnabled(True)
+                self.flatSurveyPoint = False
+
+            else:
+                print(self.timeSurveyPoint)
+                porcent = ((self.timeComplete - self.timeSurveyPoint)/self.timeComplete)*100
+
+                self.latPoint.append(GPSInformation.latitude)
+                self.lonPoint.append(GPSInformation.longitude)
+                self.altPoint.append(GPSInformation.elevation)
+
+                self.dlg.progressBar.setValue(porcent)
+                self.timeSurveyPoint = self.timeSurveyPoint - 1
+            
+            
 
     def selectLayer(self):
 
@@ -190,7 +225,7 @@ class ATNPlugin:
             self.dlg.buttonGpsActive.setEnabled(True)                   # Habilitar boton inicio
             self.dlg.buttonSelectLayer.setEnabled(False)
             self.flatSelectedLayer = True
-            self.fieldIndex = 0
+            
         else:
             utils.iface.messageBar().pushMessage("Warning "," The select layer is not point layer",level=Qgis.Warning,duration=5)
 
@@ -220,30 +255,27 @@ class ATNPlugin:
         else:
             self.flatRotationMap = False
 
+######################################################################
+
     def savePoint(self):
 
-        time = self.dlg.spinBoxTime.value()
+        self.timeSurveyPoint = self.dlg.spinBoxTime.value()
+        self.timeComplete = self.timeSurveyPoint
+
         pointName = self.dlg.linePointName.text()
-        pointCount = self.countPointCollect
         filterPoint = self.dlg.linePointFilter.text()
         
-        print(time,pointName)
-
         self.layer_for_point = QgsProject().instance().mapLayersByName(self.dlg.mMapLayer_for_point.currentText())[0]
         layer_type = self.layer_for_point.geometryType()
 
         if layer_type == QgsWkbTypes.PointGeometry:
-            print('Point Layer')
-            print(self.layer_for_point.id())
-            nameFeaturePoint = pointName + str(pointCount)
-            print(nameFeaturePoint)
-            self.dlg.progressBar.setValue(self.countPointCollect)
-            self.countPointCollect = self.countPointCollect + 1
+            #print(self.layer_for_point.id())
+            self.flatSurveyPoint = True
+            self.dlg.savePointButton.setEnabled(False)
             
         else:
             utils.iface.messageBar().pushMessage("Warning "," The select layer is not point layer",level=Qgis.Warning,duration=5)
 
-######################################################################
 
     def star_Read(self):                                            # Rutina inicializar toma de puntos
 
