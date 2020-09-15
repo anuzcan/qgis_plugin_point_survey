@@ -16,6 +16,21 @@ print (self.layer_to_edit.id())                            # Print capa ID
 layerEPSG = utils.iface.activeLayer().crs().authid()   # Obtenemos EPSG de la capa Activa
 print(layerEPSG[layerEPSG.find(":") + 1 : ])               # Imprimimos EPSG
 
+
+self.layer_for_point = QgsProject().instance().mapLayersByName(self.dlg.mMapLayer_for_point.currentText())[0]
+        layer_type = self.layer_for_point.geometryType()
+
+        if layer_type == QgsWkbTypes.PointGeometry:
+            print('Point Layer')
+        elif layer_type == QgsWkbTypes.LineGeometry:
+            print('Line Layer')
+        elif layer_type == QgsWkbTypes.PolygonGeometry:
+            print('Polygon Layer')
+
+        print(self.layer_for_point.id()) 
+
+
+
 #################################################################################
 # connect to signal renderComplete which is emitted when canvas rendering is done
 self.iface.mapCanvas().renderComplete.connect(self.renderTest)
