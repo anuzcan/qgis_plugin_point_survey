@@ -12,6 +12,8 @@ from qgis.core import (Qgis, QgsApplication,
 from .survey_dialog import survey_Dialog, tools_Dialog
 import os.path
 
+from .layerMake import layerMake
+
 class ATNPlugin:
     def __init__(self, iface):
         self.iface = iface
@@ -60,12 +62,7 @@ class ATNPlugin:
         self.flatRotationMap = False
         
         self.flatSurveyPoint = False
-        self.countPointCollect = 0
-        self.timeSurveyPoint = 0
-
-        self.latPoint = []
-        self.lonPoint = []
-        self.altPoint = []
+        
 
         select_fixMode = ["FIX","FLOAT","SINGLE"]
         self.dlg.comboBox_Fix.addItems(select_fixMode)
@@ -114,7 +111,7 @@ class ATNPlugin:
             utils.iface.messageBar().pushMessage("Error "," Device GPS not found. Check GPS Information and restart plugin",level=Qgis.Critical,duration=10)
             self.timer.stop()
             
-        now = GPSInformation.utcDateTime.currentDateTime().toString(Qt.TextDate)[5:]
+        now = GPSInformation.utcDateTime.currentDateTime().toString(Qt.TextDate)
         self.dlg.lineLatitude.setText(str(GPSInformation.latitude)[:11])
         self.dlg.lineLongitude.setText(str(GPSInformation.longitude)[:11])
         self.dlg.lineElevation.setText(str(GPSInformation.elevation)[:8])
@@ -122,79 +119,38 @@ class ATNPlugin:
 
         self.showFix(self.dlg.lineEdit,str(GPSInformation.quality))
         quality = GPSInformation.quality
+
+        date = now[22:]+'-'+now[5:8]+'-'+now[10:12]
+        time = now[13:21] 
        
         if self.flatPAUSE == False:
 
-            pt1 = self.xform.transform(QgsPointXY(GPSInformation.longitude, GPSInformation.latitude))      # Obtener corrdenadas reproyectadas a la capa destino del punto
-            fet = QgsFeature()
-            fet.setGeometry(QgsGeometry.fromPointXY(pt1))
-            fet.setAttributes([self.countPointCollect, now, GPSInformation.elevation])
-
             if (self.fix_filter == '1'):
                 if (quality == 4 or quality == 5 or quality == 1):
-                    self.layer_to_edit.addFeatures([fet])
+                    self.layerSurvey.add_point(date,time,GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality,len(GPSInformation.satPrn))
             
             elif (self.fix_filter == '5'):
                 if (quality == 4 or quality == 5):
-                    self.layer_to_edit.addFeatures([fet])
+                    self.layerSurvey.add_point(date,time,GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality,len(GPSInformation.satPrn))
             
             elif (self.fix_filter == '4'):
                 if (quality == 4):
-                    self.layer_to_edit.addFeatures([fet])    
+                    self.layerSurvey.add_point(date,time,GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality,len(GPSInformation.satPrn))    
 
-            utils.iface.mapCanvas().refresh()                  # Redibujamos capa con el punto agregado
-            self.countPointCollect += 1
 
         if self.flatSurveyPoint == True:
-            if self.timeSurveyPoint <= -1:
-
+            if self.layer_for_point.timeSurveyPoint <= -1:
                 self.dlg.progressBar.setValue(0)
                 self.dlg.savePointButton.setEnabled(True)
                 self.flatSurveyPoint = False
-
-                self.PointToLayer(self.layer_for_point,self.pointName)
-
             else:
-                porcent = ((self.timeComplete - self.timeSurveyPoint)/self.timeComplete)*100
+                self.layer_for_point.collect_point(GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality)
+                self.dlg.progressBar.setValue(self.layer_for_point.porcent)
 
-                self.latPoint.append(GPSInformation.latitude)
-                self.lonPoint.append(GPSInformation.longitude)
-                self.altPoint.append(GPSInformation.elevation)
-
-                self.dlg.progressBar.setValue(porcent)
-                self.timeSurveyPoint -= 1
-            
     def selectLayer(self):
 
-        self.layer_to_edit = QgsProject().instance().mapLayersByName(self.dlg.mMapLayerComboBox.currentText())[0] # Tomar capa seleccionada actualmente en comboBox
-        
-        layer_type = self.layer_to_edit.geometryType()
-
-        if layer_type == QgsWkbTypes.PointGeometry:
-
-            utils.iface.setActiveLayer(self.layer_to_edit)         # Seleccionamos como capa activa
-            self.layer_to_edit.startEditing()                           # Activar edicion capa
-
-            if self.layer_to_edit.dataProvider().fieldNameIndex("id")  == 0:           # Comprobar que disponga campos adecuadas
-                self.layer_to_edit.dataProvider().addAttributes([QgsField(name = "date", type = QVariant.String, len = 20), 
-                    QgsField(name = "alt", type = QVariant.Double, typeName = "double", len = 7, prec = 3)])    # Agregamos campos si faltan
-
-            else:
-                self.layer_to_edit.dataProvider().addAttributes([QgsField(name = "id", type = QVariant.Double, len = 10),
-                    QgsField(name = "date", type = QVariant.String, len = 20), 
-                    QgsField(name = "alt", type = QVariant.Double, typeName = "double", len = 7, prec = 3)])    # Agregamos campos si faltan
-            
-            self.layer_to_edit.updateFields()                                       # Actualizamos Campos
-
-            layerEPSG = utils.iface.activeLayer().crs().authid()   # Obtenemos EPSG de la capa Activa
-
-            self.layer_to_edit.commitChanges()                      # Despues de actualizar los campos detenemos edicion de capa
-
-            crsSrc = QgsCoordinateReferenceSystem("EPSG:4326")                      # WGS 84
-            crsDest = QgsCoordinateReferenceSystem(layerEPSG)                       # WGS 84 a WGS de la capa seleccionada
-            transformContext = QgsProject.instance().transformContext()             # Crear instancia de tranformacion
-            self.xform = QgsCoordinateTransform(crsSrc, crsDest, transformContext)  # Crear formulario transformacion
-         
+        self.layerSurvey = layerMake(QgsProject().instance().mapLayersByName(self.dlg.mMapLayerComboBox.currentText())[0])
+        if self.layerSurvey.error == False: 
             self.dlg.buttonGpsActive.setEnabled(True)                   # Habilitar boton inicio
             self.dlg.buttonSelectLayer.setEnabled(False)
             self.flatSelectedLayer = True
@@ -204,61 +160,21 @@ class ATNPlugin:
 
     def StartSavePoint(self):
 
-        self.layer_for_point = QgsProject().instance().mapLayersByName(self.dlg.mMapLayer_for_point.currentText())[0]
-        layer_type = self.layer_for_point.geometryType()
-
-        if layer_type == QgsWkbTypes.PointGeometry:
-
-            self.layer_for_point.startEditing()
-
-            if self.layer_for_point.dataProvider().fieldNameIndex("id_name")  == 0:           # Comprobar que disponga campos adecuadas
-                self.layer_for_point.dataProvider().addAttributes([QgsField(name = "alt", type = QVariant.Double, typeName = "double", len = 7, prec = 3)])
-
-            else:
-                self.layer_for_point.dataProvider().addAttributes([QgsField(name = "id_name", type = QVariant.String, len = 20),
-                    QgsField(name = "alt", type = QVariant.Double, typeName = "double", len = 7, prec = 3)])    # Agregamos campos si faltan
-
-            self.layer_for_point.updateFields()
-            self.layer_for_point.commitChanges()
-
-            self.pointName = self.dlg.linePointName.text()
-            self.filterPoint = self.dlg.linePointFilter.text()
-
-            self.timeSurveyPoint = self.dlg.spinBoxTime.value()
-            self.timeComplete = self.timeSurveyPoint
+        self.layer_for_point = layerMake(QgsProject().instance().mapLayersByName(self.dlg.mMapLayer_for_point.currentText())[0])
+        
+        if self.layer_for_point.error == False:
             
+            self.layer_for_point.pointName = self.dlg.linePointName.text()
+            self.layer_for_point.timeSurveyPoint = self.dlg.spinBoxTime.value()
+            self.layer_for_point.timeComplete = self.dlg.spinBoxTime.value()
+
             self.flatSurveyPoint = True
             self.dlg.savePointButton.setEnabled(False)
             
         else:
             utils.iface.messageBar().pushMessage("Warning "," The select layer is not point layer",level=Qgis.Warning,duration=5)
 
-    def PointToLayer(self,layer,pointID):
-
-        utils.iface.setActiveLayer(layer)     
-        
-        layerEPSG = utils.iface.activeLayer().crs().authid()
-        crsSrc = QgsCoordinateReferenceSystem("EPSG:4326")                      # WGS 84
-        crsDest = QgsCoordinateReferenceSystem(layerEPSG)                       # WGS 84 a WGS de la capa seleccionada
-        transformContext = QgsProject.instance().transformContext()             # Crear instancia de tranformacion
-        xform = QgsCoordinateTransform(crsSrc, crsDest, transformContext)  # Crear formulario transformacion
-        
-        layer.startEditing()             
-
-        point = xform.transform(QgsPointXY(sum(self.lonPoint)/len(self.lonPoint), sum(self.latPoint)/len(self.latPoint)))      # Obtener corrdenadas reproyectadas a la capa destino del punto
-        fet = QgsFeature()
-        fet.setGeometry(QgsGeometry.fromPointXY(point))
-        fet.setAttributes([pointID,sum(self.altPoint)/len(self.altPoint)]) 
-
-        layer.addFeatures([fet])
-        utils.iface.mapCanvas().refresh()
-
-        layer.commitChanges()                      # Despues de actualizar los campos detenemos edicion de capa
-
-        self.latPoint.clear()
-        self.lonPoint.clear()
-        self.altPoint.clear()
-
+    
     def star_Read(self):                                            # Rutina inicializar toma de puntos
         self.fix_filter = self.dlg.comboBox_Fix.currentText()
         
@@ -271,7 +187,7 @@ class ATNPlugin:
         elif self.fix_filter == 'SINGLE':
             self.fix_filter = '1'
             
-        self.layer_to_edit.startEditing()
+    
         self.flatPAUSE = False
         
         # Habilitamos botones
@@ -288,8 +204,6 @@ class ATNPlugin:
         self.dlg.buttonGpsDesactive.setEnabled(True)
 
     def end_Read(self):                                          # Rutina Finalizar Captura
-        if self.flatSelectedLayer == True:
-            self.layer_to_edit.commitChanges()
         self.flatPAUSE = True
 
         # Habilitamos Botones
