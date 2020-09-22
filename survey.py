@@ -139,13 +139,14 @@ class ATNPlugin:
 
 
         if self.flatSurveyPoint == True:
-            if self.layer_for_point.timeSurveyPoint <= -1:
-                self.dlg.progressBar.setValue(0)
+
+            self.layer_for_point.collect_point(date,time,GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality,len(GPSInformation.satPrn))
+            self.dlg.progressBar.setValue(self.layer_for_point.porcent)
+            if self.layer_for_point.SurveyPointEnabled == False:
+                self.flatSurveyPoint = self.layer_for_point.SurveyPointEnabled
                 self.dlg.savePointButton.setEnabled(True)
-                self.flatSurveyPoint = False
-            else:
-                self.layer_for_point.collect_point(GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality)
-                self.dlg.progressBar.setValue(self.layer_for_point.porcent)
+
+        
 
     def selectLayer(self):
 
@@ -160,13 +161,15 @@ class ATNPlugin:
 
     def StartSavePoint(self):
 
-        self.layer_for_point = layerMake(QgsProject().instance().mapLayersByName(self.dlg.mMapLayer_for_point.currentText())[0])
+        self.layer_for_point = layerMake(QgsProject().instance().mapLayersByName(self.dlg.mMapLayer_for_point.currentText())[0],
+            self.dlg.linePointName.text(),
+            self.dlg.spinBoxTime.value())
         
         if self.layer_for_point.error == False:
             
-            self.layer_for_point.pointName = self.dlg.linePointName.text()
-            self.layer_for_point.timeSurveyPoint = self.dlg.spinBoxTime.value()
-            self.layer_for_point.timeComplete = self.dlg.spinBoxTime.value()
+            #self.layer_for_point.pointName = self.dlg.linePointName.text()
+            #self.layer_for_point.timeSurveyPoint = self.dlg.spinBoxTime.value()
+            #self.layer_for_point.timeComplete = self.dlg.spinBoxTime.value()
 
             self.flatSurveyPoint = True
             self.dlg.savePointButton.setEnabled(False)

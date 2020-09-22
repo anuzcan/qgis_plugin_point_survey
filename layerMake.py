@@ -7,15 +7,18 @@ from qgis.core import (Qgis, QgsApplication,
 from PyQt5.QtCore import QVariant
 
 class layerMake:
-	def __init__(self,layer):
+	def __init__(self,layer, point_ID = 'NULL',timeSurveyPoint=0):
 		
 		self.layer_to_edit = layer
 		layer_type = self.layer_to_edit.geometryType()
 		self.count = 0
 
-		self.timeSurveyPoint = 0
+		self.timeSurveyPoint = timeSurveyPoint
+		self.timeComplete = timeSurveyPoint
+		self.SurveyPointEnabled = False
 		self.porcent = 0
-		self.pointName = []
+		self.pointName = point_ID
+		print(self.pointName)
 
 		self.latPoint = []
 		self.lonPoint = []
@@ -67,11 +70,17 @@ class layerMake:
 		else:
 			self.error = True
 
-	def add_point(self,date,time,x,y,alt,fix_mode,sat_n):
+	def add_point(self,date,time,x,y,alt,fix_mode,sat_n,name = 'NULL'):
 		pt1 = self.xform.transform(QgsPointXY(x, y))
 		fet = QgsFeature()
 		fet.setGeometry(QgsGeometry.fromPointXY(pt1))
-		fet.setAttributes([self.count, date, time,y,x,alt,fix_mode,sat_n])
+
+		if name == 'NULL':
+			namePoint = self.count
+		else:
+			namePoint = name
+
+		fet.setAttributes([namePoint, date, time,y,x,alt,fix_mode,sat_n])
 		self.layer_to_edit.startEditing()
 		self.layer_to_edit.addFeatures([fet])
 		self.layer_to_edit.commitChanges()
@@ -80,26 +89,34 @@ class layerMake:
 
 		self.count += 1
 		
-	def collect_point(self,x,y,alt,fix_mode):
+	def collect_point(self,date,time,x,y,alt,fix_mode,sat_n):
 
-		if self.timeSurveyPoint > -1:
+		if self.timeSurveyPoint > 0:
+			self.SurveyPointEnabled = True
 			self.latPoint.append(y)
 			self.lonPoint.append(x)
 			self.altPoint.append(alt)
-
-			print(self.latPoint)
 
 			self.porcent = ((self.timeComplete - self.timeSurveyPoint)/self.timeComplete)*100
 			self.timeSurveyPoint -= 1
 		
 		else:
-			print('test')
+			self.add_point(date,
+				time,
+				sum(self.lonPoint)/len(self.lonPoint),
+				sum(self.latPoint)/len(self.latPoint),
+				sum(self.altPoint)/len(self.altPoint),
+				fix_mode,
+				sat_n,
+				self.pointName)
+
+			self.porcent = 0
+			self.SurveyPointEnabled = False
+
 			#print(sum(self.latPoint)/len(self.latPoint))
 			#print(sum(self.lonPoint)/len(self.lonPoint))
 			#print(sum(self.altPoint)/len(self.altPoint))
-			#self.latPoint.clear()
-			#self.lonPoint.clear()
-			#self.altPoint.clear()
+			
 
 	def print(self):
 		print(self.layer_to_edit)
