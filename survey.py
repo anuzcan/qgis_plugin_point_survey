@@ -62,6 +62,7 @@ class ATNPlugin:
         self.flatRotationMap = False
         
         self.flatSurveyPoint = False
+        self.flatSurveyStar = False
         
 
         select_fixMode = ["FIX","FLOAT","SINGLE"]
@@ -144,9 +145,9 @@ class ATNPlugin:
             self.dlg.progressBar.setValue(self.layer_for_point.porcent)
             if self.layer_for_point.SurveyPointEnabled == False:
                 self.flatSurveyPoint = self.layer_for_point.SurveyPointEnabled
-                self.dlg.savePointButton.setEnabled(True)
+                self.dlg.savePointButton.setText('SavePoint')
+                #self.dlg.savePointButton.setEnabled(True)
 
-        
 
     def selectLayer(self):
 
@@ -161,23 +162,30 @@ class ATNPlugin:
 
     def StartSavePoint(self):
 
-        self.layer_for_point = layerMake(QgsProject().instance().mapLayersByName(self.dlg.mMapLayer_for_point.currentText())[0],
-            self.dlg.linePointName.text(),
-            self.dlg.spinBoxTime.value())
+        if self.flatSurveyStar == False:
+
+            self.layer_for_point = layerMake(QgsProject().instance().mapLayersByName(self.dlg.mMapLayer_for_point.currentText())[0],
+                self.dlg.linePointName.text(),
+                self.dlg.spinBoxTime.value(),
+                self.dlg.comboBox_Fix.currentText())
         
-        if self.layer_for_point.error == False:
+            if self.layer_for_point.error == False:
             
-            #self.layer_for_point.pointName = self.dlg.linePointName.text()
-            #self.layer_for_point.timeSurveyPoint = self.dlg.spinBoxTime.value()
-            #self.layer_for_point.timeComplete = self.dlg.spinBoxTime.value()
+                self.flatSurveyPoint = True
+                #self.dlg.savePointButton.setStyleSheet('QPushButton {background-color: #A3C1DA; color:red}')
+                self.dlg.savePointButton.setText('Cancel')
+                self.flatSurveyStar = True
+            
+            else:
+                utils.iface.messageBar().pushMessage("Warning "," The select layer is not point layer",level=Qgis.Warning,duration=5)
 
-            self.flatSurveyPoint = True
-            self.dlg.savePointButton.setEnabled(False)
-            
         else:
-            utils.iface.messageBar().pushMessage("Warning "," The select layer is not point layer",level=Qgis.Warning,duration=5)
+            self.flatSurveyPoint = False
+            self.flatSurveyStar = False
+            self.dlg.progressBar.setValue(0)
+            self.dlg.savePointButton.setText('SavePoint')
 
-    
+
     def star_Read(self):                                            # Rutina inicializar toma de puntos
         self.fix_filter = self.dlg.comboBox_Fix.currentText()
         
@@ -238,10 +246,13 @@ class ATNPlugin:
     def read_setting(self):
         s = QgsSettings()
         self.plugin_name = s.value("quick_survey_plugin/plugin_name")
+        timeSurvey = s.value("quick_survey_plugin/timeSurveyPoint",10)
+        self.dlg.spinBoxTime.setValue(timeSurvey)
 
     def store_setting(self):
         s = QgsSettings()
         s.setValue("quick_survey_plugin/plugin_name", "Quick Survey Plugin")
+        s.setValue("quick_survey_plugin/timeSurveyPoint", self.dlg.spinBoxTime.value())
 
     def zoomInMapCanvas(self):
         utils.iface.mapCanvas().zoomByFactor(0.9)

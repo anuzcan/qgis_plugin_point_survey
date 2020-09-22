@@ -1,13 +1,13 @@
 from qgis import utils
-from qgis.core import (Qgis, QgsApplication, 
-    QgsProject, QgsWkbTypes, QgsPoint, 
+from qgis.core import (Qgis, 
+    QgsProject, QgsWkbTypes, 
     QgsPointXY, QgsFeature, QgsGeometry, 
     QgsField, QgsCoordinateReferenceSystem, 
-    QgsCoordinateTransform, QgsSettings)
+    QgsCoordinateTransform)
 from PyQt5.QtCore import QVariant
 
 class layerMake:
-	def __init__(self,layer, point_ID = 'NULL',timeSurveyPoint=0):
+	def __init__(self,layer, point_ID = 'survey', timeSurveyPoint=0, filt = 'SINGLE'):
 		
 		self.layer_to_edit = layer
 		layer_type = self.layer_to_edit.geometryType()
@@ -16,9 +16,9 @@ class layerMake:
 		self.timeSurveyPoint = timeSurveyPoint
 		self.timeComplete = timeSurveyPoint
 		self.SurveyPointEnabled = False
+		self.filterPoint = self.setfilter(filt)
 		self.porcent = 0
 		self.pointName = point_ID
-		print(self.pointName)
 
 		self.latPoint = []
 		self.lonPoint = []
@@ -44,17 +44,20 @@ class layerMake:
 
 			if self.layer_to_edit.dataProvider().fieldNameIndex("id") == 0 and self.layer_to_edit.dataProvider().fields().count() == 1:
 				self.layer_to_edit.dataProvider().addAttributes([
+					QgsField(name = "PointName", type = QVariant.String, typeName = "text", len = 20),
 					QgsField(name = "DATE", type = QVariant.String, typeName = "text", len = 12),
 					QgsField(name = "TIME", type = QVariant.String, typeName = "text", len = 10), 
                     QgsField(name = "LAT", type = QVariant.Double, typeName = "double", len = 23, prec = 15),
                     QgsField(name = "LON", type = QVariant.Double, typeName = "double", len = 23, prec = 15),
                     QgsField(name = "ALT", type = QVariant.Double, typeName = "double", len = 7, prec = 3),
                     QgsField(name = "FIX_MODE", type = QVariant.String, typeName = "int", len = 6),
-                    QgsField(name = "SAT_N", type = QVariant.Int, typeName = "int", len = 2)])
+                    QgsField(name = "SAT_N", type = QVariant.Int, typeName = "int", len = 2),
+                    QgsField(name = "PointName", type = QVariant.String, typeName = "text", len = 20)])
 
 			elif self.layer_to_edit.dataProvider().fields().count() == 0:
 				self.layer_to_edit.dataProvider().addAttributes([
 					QgsField(name = "id", type = QVariant.Int, typeName = "int", len = 10),
+					QgsField(name = "PointName", type = QVariant.String, typeName = "text", len = 20),
 					QgsField(name = "DATE", type = QVariant.String, typeName = "text", len = 12),
 					QgsField(name = "TIME", type = QVariant.String, typeName = "text", len = 10), 
                     QgsField(name = "LAT", type = QVariant.Double, typeName = "double", len = 23, prec = 15),
@@ -70,17 +73,12 @@ class layerMake:
 		else:
 			self.error = True
 
-	def add_point(self,date,time,x,y,alt,fix_mode,sat_n,name = 'NULL'):
+	def add_point(self,date,time,x,y,alt,fix_mode,sat_n,name = 'survey'):
 		pt1 = self.xform.transform(QgsPointXY(x, y))
 		fet = QgsFeature()
 		fet.setGeometry(QgsGeometry.fromPointXY(pt1))
 
-		if name == 'NULL':
-			namePoint = self.count
-		else:
-			namePoint = name
-
-		fet.setAttributes([namePoint, date, time,y,x,alt,fix_mode,sat_n])
+		fet.setAttributes([self.count,name,date,time,y,x,alt,fix_mode,sat_n])
 		self.layer_to_edit.startEditing()
 		self.layer_to_edit.addFeatures([fet])
 		self.layer_to_edit.commitChanges()
@@ -93,14 +91,16 @@ class layerMake:
 
 		if self.timeSurveyPoint > 0:
 			self.SurveyPointEnabled = True
-			self.latPoint.append(y)
-			self.lonPoint.append(x)
-			self.altPoint.append(alt)
+			
+			if fix_mode == self.filterPoint:
+				self.latPoint.append(y)
+				self.lonPoint.append(x)
+				self.altPoint.append(alt)
 
-			self.porcent = ((self.timeComplete - self.timeSurveyPoint)/self.timeComplete)*100
-			self.timeSurveyPoint -= 1
+				self.porcent = ((self.timeComplete - self.timeSurveyPoint)/self.timeComplete)*100
+				self.timeSurveyPoint -= 1
 		
-		else:
+		elif self.timeSurveyPoint <= 0:
 			self.add_point(date,
 				time,
 				sum(self.lonPoint)/len(self.lonPoint),
@@ -113,56 +113,18 @@ class layerMake:
 			self.porcent = 0
 			self.SurveyPointEnabled = False
 
-			#print(sum(self.latPoint)/len(self.latPoint))
-			#print(sum(self.lonPoint)/len(self.lonPoint))
-			#print(sum(self.altPoint)/len(self.altPoint))
-			
+
+	def setfilter(self,Filter):
+
+		if Filter == 'FIX':
+			return 4
+
+		elif Filter == 'FLOAT':
+			return 5
+
+		elif Filter == 'SINGLE':
+			return 1
 
 	def print(self):
 		print(self.layer_to_edit)
 		return True
-'''
-if self.timeSurveyPoint <= -1:
-
-                self.dlg.progressBar.setValue(0)
-                self.dlg.savePointButton.setEnabled(True)
-                self.flatSurveyPoint = False
-
-                self.PointToLayer(self.layer_for_point,self.pointName)
-
-            else:
-                porcent = ((self.timeComplete - self.timeSurveyPoint)/self.timeComplete)*100
-
-                self.latPoint.append(GPSInformation.latitude)
-                self.lonPoint.append(GPSInformation.longitude)
-                self.altPoint.append(GPSInformation.elevation)
-
-                self.dlg.progressBar.setValue(porcent)
-                self.timeSurveyPoint -= 1
-
-def PointToLayer(self,layer,pointID):
-
-        utils.iface.setActiveLayer(layer)     
-        
-        layerEPSG = utils.iface.activeLayer().crs().authid()
-        crsSrc = QgsCoordinateReferenceSystem("EPSG:4326")                      # WGS 84
-        crsDest = QgsCoordinateReferenceSystem(layerEPSG)                       # WGS 84 a WGS de la capa seleccionada
-        transformContext = QgsProject.instance().transformContext()             # Crear instancia de tranformacion
-        xform = QgsCoordinateTransform(crsSrc, crsDest, transformContext)  # Crear formulario transformacion
-        
-        layer.startEditing()             
-
-        point = xform.transform(QgsPointXY(sum(self.lonPoint)/len(self.lonPoint), sum(self.latPoint)/len(self.latPoint)))      # Obtener corrdenadas reproyectadas a la capa destino del punto
-        fet = QgsFeature()
-        fet.setGeometry(QgsGeometry.fromPointXY(point))
-        fet.setAttributes([pointID,sum(self.altPoint)/len(self.altPoint)]) 
-
-        layer.addFeatures([fet])
-        utils.iface.mapCanvas().refresh()
-
-        layer.commitChanges()                      # Despues de actualizar los campos detenemos edicion de capa
-
-        self.latPoint.clear()
-        self.lonPoint.clear()
-        self.altPoint.clear()
-'''
