@@ -9,7 +9,7 @@ from qgis.core import (Qgis, QgsApplication,
     QgsField, QgsCoordinateReferenceSystem, 
     QgsCoordinateTransform, QgsSettings)
 
-from .survey_dialog import survey_Dialog, tools_Dialog
+from .survey_dialog import survey_Dialog
 import os.path
 
 from .layerMake import layerMake
@@ -36,19 +36,16 @@ class ATNPlugin:
         self.dlg = survey_Dialog()                                  # Cargamos dialogo de archivo .ui
         
         # Creamos acciones para los botones y comandos
-        self.dlg.buttonSetFilterPoints.clicked.connect(self.filters)
-        self.dlg.buttonRotationSet.clicked.connect(self.rotation)
         self.dlg.buttonGpsActive.clicked.connect(self.star_Read)
         self.dlg.buttonGPSPause.clicked.connect(self.pause_Read)
         self.dlg.buttonGpsDesactive.clicked.connect(self.end_Read)
-        self.dlg.buttonSelectLayer.clicked.connect(self.selectLayer)
+        self.dlg.buttonSelectLayer.clicked.connect(self.SelectLayerSurvey)
         self.dlg.buttonClose_plugin.clicked.connect(self.close_plugin)
         self.dlg.zoomInbutton.clicked.connect(self.zoomInMapCanvas)
         self.dlg.zoomOutbutton.clicked.connect(self.zoomOutMapCanvas)
         self.dlg.savePointButton.clicked.connect(self.StartSavePoint)
         
         # Deshabilitar botones 
-        self.dlg.buttonSetFilterPoints.setEnabled(False)
         self.dlg.buttonSelectLayer.setEnabled(False)
         self.dlg.buttonGpsActive.setEnabled(False)          
         self.dlg.buttonGPSPause.setEnabled(False)
@@ -63,12 +60,11 @@ class ATNPlugin:
         
         self.flatSurveyPoint = False
         self.flatSurveyStar = False
-        
+        self.namePointFlat = []
+        self.countSurveyName = 0
 
         select_fixMode = ["FIX","FLOAT","SINGLE"]
         self.dlg.comboBox_Fix.addItems(select_fixMode)
-
-        self.dlg.linePointName.setText('pointName')
 
         # Configurar temporizador
         self.timer = QTimer()
@@ -81,9 +77,9 @@ class ATNPlugin:
         del self.action
 
     def run(self):                                                  # Rutina ejecuta al llamar plugin
-
         self.read_setting()
         self.flatGPS = self.testSignal()
+        self.namePointFlat = self.dlg.linePointName.text()[:self.dlg.linePointName.text().find('-')]
 
         if self.flatGPS == True:                                  # Verificamos que este GPS conectado
             self.dlg.buttonSelectLayer.setEnabled(True)
@@ -143,13 +139,18 @@ class ATNPlugin:
 
             self.layer_for_point.collect_point(date,time,GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality,len(GPSInformation.satPrn))
             self.dlg.progressBar.setValue(self.layer_for_point.porcent)
+            
             if self.layer_for_point.SurveyPointEnabled == False:
+                
                 self.flatSurveyPoint = self.layer_for_point.SurveyPointEnabled
+                self.flatSurveyStar = False
+
+                self.countSurveyName += 1
+                self.dlg.linePointName.setText(self.layer_for_point.pointName[:self.layer_for_point.pointName.find('-')+1]+str(self.countSurveyName))
                 self.dlg.savePointButton.setText('SavePoint')
-                #self.dlg.savePointButton.setEnabled(True)
+            
 
-
-    def selectLayer(self):
+    def SelectLayerSurvey(self):
 
         self.layerSurvey = layerMake(QgsProject().instance().mapLayersByName(self.dlg.mMapLayerComboBox.currentText())[0])
         if self.layerSurvey.error == False: 
@@ -158,14 +159,25 @@ class ATNPlugin:
             self.flatSelectedLayer = True
             
         else:
-            utils.iface.messageBar().pushMessage("Warning "," The select layer is not point layer",level=Qgis.Warning,duration=5)
+            utils.iface.messageBar().pushMessage("Warning "," The select layer is not enable",level=Qgis.Warning,duration=5)
 
     def StartSavePoint(self):
 
         if self.flatSurveyStar == False:
 
+            if self.dlg.linePointName.text().find('-') != -1:
+                self.namePoint = self.dlg.linePointName.text()[:self.dlg.linePointName.text().find('-') + 1]
+            else:
+                self.namePoint = self.dlg.linePointName.text() + '-'
+
+            if self.namePointFlat + '-' != self.namePoint:
+                self.namePointFlat = self.namePoint[:self.namePoint.find('-')]
+                print(self.namePointFlat)
+                print(self.namePoint)
+                self.countSurveyName = 0
+
             self.layer_for_point = layerMake(QgsProject().instance().mapLayersByName(self.dlg.mMapLayer_for_point.currentText())[0],
-                self.dlg.linePointName.text(),
+                self.namePoint + str(self.countSurveyName),
                 self.dlg.spinBoxTime.value(),
                 self.dlg.comboBox_Fix.currentText())
         
@@ -177,7 +189,7 @@ class ATNPlugin:
                 self.flatSurveyStar = True
             
             else:
-                utils.iface.messageBar().pushMessage("Warning "," The select layer is not point layer",level=Qgis.Warning,duration=5)
+                utils.iface.messageBar().pushMessage("Warning "," The select layer is not enable",level=Qgis.Warning,duration=5)
 
         else:
             self.flatSurveyPoint = False
@@ -197,8 +209,7 @@ class ATNPlugin:
             
         elif self.fix_filter == 'SINGLE':
             self.fix_filter = '1'
-            
-    
+                
         self.flatPAUSE = False
         
         # Habilitamos botones
@@ -246,44 +257,30 @@ class ATNPlugin:
     def read_setting(self):
         s = QgsSettings()
         self.plugin_name = s.value("quick_survey_plugin/plugin_name")
-        timeSurvey = s.value("quick_survey_plugin/timeSurveyPoint",10)
-        self.dlg.spinBoxTime.setValue(timeSurvey)
+        timeSurvey = s.value("quick_survey_plugin/timeSurveyPoint","10")
+        self.dlg.spinBoxTime.setValue(int(timeSurvey))
+        namePoint = s.value("quick_survey_plugin/namePoint","WP")
+        self.dlg.linePointName.setText(namePoint+'-'+str(self.countSurveyName))
+        indexFilter = s.value("quick_survey_plugin/indexFilter", 0)
+        self.dlg.comboBox_Fix.setCurrentIndex(indexFilter)
 
     def store_setting(self):
         s = QgsSettings()
         s.setValue("quick_survey_plugin/plugin_name", "Quick Survey Plugin")
         s.setValue("quick_survey_plugin/timeSurveyPoint", self.dlg.spinBoxTime.value())
+        s.setValue("quick_survey_plugin/indexFilter", self.dlg.comboBox_Fix.currentIndex())
+
+        if self.dlg.linePointName.text().find('-') != -1:
+            name = self.dlg.linePointName.text()[:self.dlg.linePointName.text().find('-')]
+        else:
+            name = self.dlg.linePointName.text()
+        
+        s.setValue("quick_survey_plugin/namePoint",name)
 
     def zoomInMapCanvas(self):
-        utils.iface.mapCanvas().zoomByFactor(0.9)
+        utils.iface.mapCanvas().zoomByFactor(0.8)
 
     def zoomOutMapCanvas(self):
-        utils.iface.mapCanvas().zoomByFactor(1.1)
+        utils.iface.mapCanvas().zoomByFactor(1.2)
 
-    ######################################################################
-    #On Construction
-    def filters(self):
-        
-        self.dlgtools = tools_Dialog(self.dlg)
-        self.dlgtools.pushButton.clicked.connect(self.closeFilter)
-        self.dlgtools.show()
-
-    def closeFilter(self):
-
-        hdop = self.dlgtools.hdopSpinBox.value()
-        vdop = self.dlgtools.vdopSpinBox.value()
-        pdop = self.dlgtools.pdopSpinBox.value()
-        self.dlgtools.close()
-        del self.dlgtools
-
-    def rotation(self):
-
-        if self.flatRotationMap == False:
-            self.flatRotationMap = True
-            rot = utils.iface.mapCanvas().rotation()
-            utils.iface.mapCanvas().setRotation(rot + 10)
-        else:
-            self.flatRotationMap = False
-
-######################################################################
     

@@ -6,9 +6,6 @@ from PyQt5 import QtWidgets
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'dlgmain.ui'))
 
-TOOLS_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'dlgtools.ui'))
-
-
 class survey_Dialog(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, parent=None):
         """Constructor."""
@@ -25,11 +22,3 @@ class survey_Dialog(QtWidgets.QDialog, FORM_CLASS):
 
         else:
             event.ignore()
-
-
- 
-class tools_Dialog(QtWidgets.QDialog, TOOLS_CLASS):
-    def __init__(self, parent=None):
-        """Constructor."""
-        super(tools_Dialog, self).__init__(parent)
-        self.setupUi(self)

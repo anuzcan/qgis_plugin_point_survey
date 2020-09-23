@@ -32,43 +32,45 @@ class layerMake:
 		if self.layer_to_edit.dataProvider().fields().count() > 1:
 			utils.iface.messageBar().pushMessage("Warning "," The select layer is not empty",level=Qgis.Warning,duration=5)
 		
-		if layer_type == QgsWkbTypes.PointGeometry:
-			layerEPSG = self.layer_to_edit.crs().authid()
-			crsSrc = QgsCoordinateReferenceSystem("EPSG:4326")                      # WGS 84
-			crsDest = QgsCoordinateReferenceSystem(layerEPSG)                       # WGS 84 a WGS de la capa seleccionada
-			transformContext = QgsProject.instance().transformContext()             # Crear instancia de tranformacion
-			self.xform = QgsCoordinateTransform(crsSrc, crsDest, transformContext)  # Crear formulario transformacion
-			
-			utils.iface.setActiveLayer(self.layer_to_edit)
-			self.layer_to_edit.startEditing()
+		if self.layer_to_edit.dataProvider().fields().count() <= 9:
 
-			if self.layer_to_edit.dataProvider().fieldNameIndex("id") == 0 and self.layer_to_edit.dataProvider().fields().count() == 1:
-				self.layer_to_edit.dataProvider().addAttributes([
-					QgsField(name = "PointName", type = QVariant.String, typeName = "text", len = 20),
-					QgsField(name = "DATE", type = QVariant.String, typeName = "text", len = 12),
-					QgsField(name = "TIME", type = QVariant.String, typeName = "text", len = 10), 
-                    QgsField(name = "LAT", type = QVariant.Double, typeName = "double", len = 23, prec = 15),
-                    QgsField(name = "LON", type = QVariant.Double, typeName = "double", len = 23, prec = 15),
-                    QgsField(name = "ALT", type = QVariant.Double, typeName = "double", len = 7, prec = 3),
-                    QgsField(name = "FIX_MODE", type = QVariant.String, typeName = "int", len = 6),
-                    QgsField(name = "SAT_N", type = QVariant.Int, typeName = "int", len = 2),
-                    QgsField(name = "PointName", type = QVariant.String, typeName = "text", len = 20)])
+			if layer_type == QgsWkbTypes.PointGeometry:
+				layerEPSG = self.layer_to_edit.crs().authid()
+				crsSrc = QgsCoordinateReferenceSystem("EPSG:4326")                      # WGS 84
+				crsDest = QgsCoordinateReferenceSystem(layerEPSG)                       # WGS 84 a WGS de la capa seleccionada
+				transformContext = QgsProject.instance().transformContext()             # Crear instancia de tranformacion
+				self.xform = QgsCoordinateTransform(crsSrc, crsDest, transformContext)  # Crear formulario transformacion
+				
+				utils.iface.setActiveLayer(self.layer_to_edit)
+				self.layer_to_edit.startEditing()
 
-			elif self.layer_to_edit.dataProvider().fields().count() == 0:
-				self.layer_to_edit.dataProvider().addAttributes([
-					QgsField(name = "id", type = QVariant.Int, typeName = "int", len = 10),
-					QgsField(name = "PointName", type = QVariant.String, typeName = "text", len = 20),
-					QgsField(name = "DATE", type = QVariant.String, typeName = "text", len = 12),
-					QgsField(name = "TIME", type = QVariant.String, typeName = "text", len = 10), 
-                    QgsField(name = "LAT", type = QVariant.Double, typeName = "double", len = 23, prec = 15),
-                    QgsField(name = "LON", type = QVariant.Double, typeName = "double", len = 23, prec = 15),
-                    QgsField(name = "ALT", type = QVariant.Double, typeName = "double", len = 7, prec = 3),
-                    QgsField(name = "FIX_MODE", type = QVariant.String, typeName = "text", len = 6),
-                    QgsField(name = "SAT_N", type = QVariant.Int, typeName = "int", len = 2)])    
+				if self.layer_to_edit.dataProvider().fieldNameIndex("id") == 0 and self.layer_to_edit.dataProvider().fields().count() == 1:
+					self.layer_to_edit.dataProvider().addAttributes([
+						QgsField(name = "PointName", type = QVariant.String, typeName = "text", len = 20),
+						QgsField(name = "DATE", type = QVariant.String, typeName = "text", len = 12),
+						QgsField(name = "TIME", type = QVariant.String, typeName = "text", len = 10), 
+	                    QgsField(name = "LAT", type = QVariant.Double, typeName = "double", len = 23, prec = 15),
+	                    QgsField(name = "LON", type = QVariant.Double, typeName = "double", len = 23, prec = 15),
+	                    QgsField(name = "ALT", type = QVariant.Double, typeName = "double", len = 7, prec = 3),
+	                    QgsField(name = "FIX_MODE", type = QVariant.String, typeName = "int", len = 6),
+	                    QgsField(name = "SAT_N", type = QVariant.Int, typeName = "int", len = 2),
+	                    QgsField(name = "PointName", type = QVariant.String, typeName = "text", len = 20)])
 
-			self.layer_to_edit.updateFields()
-			self.layer_to_edit.commitChanges()
-			self.error = False 
+				elif self.layer_to_edit.dataProvider().fields().count() == 0:
+					self.layer_to_edit.dataProvider().addAttributes([
+						QgsField(name = "id", type = QVariant.Int, typeName = "int", len = 10),
+						QgsField(name = "PointName", type = QVariant.String, typeName = "text", len = 20),
+						QgsField(name = "DATE", type = QVariant.String, typeName = "text", len = 12),
+						QgsField(name = "TIME", type = QVariant.String, typeName = "text", len = 10), 
+	                    QgsField(name = "LAT", type = QVariant.Double, typeName = "double", len = 23, prec = 15),
+	                    QgsField(name = "LON", type = QVariant.Double, typeName = "double", len = 23, prec = 15),
+	                    QgsField(name = "ALT", type = QVariant.Double, typeName = "double", len = 7, prec = 3),
+	                    QgsField(name = "FIX_MODE", type = QVariant.String, typeName = "text", len = 6),
+	                    QgsField(name = "SAT_N", type = QVariant.Int, typeName = "int", len = 2)])    
+
+				self.layer_to_edit.updateFields()
+				self.layer_to_edit.commitChanges()
+				self.error = False 
 
 		else:
 			self.error = True
@@ -124,7 +126,3 @@ class layerMake:
 
 		elif Filter == 'SINGLE':
 			return 1
-
-	def print(self):
-		print(self.layer_to_edit)
-		return True
