@@ -23,9 +23,18 @@ This tool will help producers to implement current technologies in more efficien
 - [X] Set point filters
 - [X] Debug interface
 - [ ] Field tests
+- [ ] Develop help documentation
 - [ ] Set rotation map in real time
 - [ ] Project area calculation
 
 ### Version Control
 
 - 1.0
+
+## Instructions for use
+
+1) Create a point layer, it can be shp file or temporary layer
+2) Connect the GPS using the GPS information panel in QGIS
+3) Open the plugin
+4) Select the layer where the surveyed points will be saved, as needed in continuous survey or single point
+5) Start capture
