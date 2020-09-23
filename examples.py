@@ -67,3 +67,31 @@ https://qgis.github.io/pyqgis/3.2/core/Gps/QgsGpsInformation.html
         #GPSInformation.satellitesInView
         #GPSInformation.speed
         #GPSInformation.status
+
+######################################################################
+    #On Construction
+    def filters(self):
+        
+        self.dlgtools = tools_Dialog(self.dlg)
+        self.dlgtools.pushButton.clicked.connect(self.closeFilter)
+        self.dlgtools.show()
+
+    def closeFilter(self):
+
+        hdop = self.dlgtools.hdopSpinBox.value()
+        vdop = self.dlgtools.vdopSpinBox.value()
+        pdop = self.dlgtools.pdopSpinBox.value()
+        self.dlgtools.close()
+        del self.dlgtools
+
+    def rotation(self):
+
+        if self.flatRotationMap == False:
+            self.flatRotationMap = True
+            rot = utils.iface.mapCanvas().rotation()
+            utils.iface.mapCanvas().setRotation(rot + 10)
+        else:
+            self.flatRotationMap = False
+
+######################################################################
+    

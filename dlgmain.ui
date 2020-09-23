@@ -34,10 +34,10 @@
   <widget class="QPushButton" name="buttonClose_plugin">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>410</y>
-     <width>75</width>
-     <height>23</height>
+     <x>20</x>
+     <y>380</y>
+     <width>51</width>
+     <height>51</height>
     </rect>
    </property>
    <property name="text">
@@ -222,7 +222,7 @@
          <number>5</number>
         </property>
         <property name="value">
-         <number>20</number>
+         <number>0</number>
         </property>
        </widget>
       </item>
@@ -422,34 +422,6 @@
     </property>
    </widget>
   </widget>
-  <widget class="QPushButton" name="buttonRotationSet">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>200</y>
-     <width>61</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="autoFillBackground">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Map Rot</string>
-   </property>
-   <property name="checkable">
-    <bool>false</bool>
-   </property>
-   <property name="checked">
-    <bool>false</bool>
-   </property>
-   <property name="default">
-    <bool>false</bool>
-   </property>
-   <property name="flat">
-    <bool>false</bool>
-   </property>
-  </widget>
   <widget class="QGroupBox" name="groupBox_3">
    <property name="geometry">
     <rect>
@@ -475,13 +447,6 @@
      <item>
       <widget class="QComboBox" name="comboBox_Fix"/>
      </item>
-     <item>
-      <widget class="QPushButton" name="buttonSetFilterPoints">
-       <property name="text">
-        <string>Detailed Filter</string>
-       </property>
-      </widget>
-     </item>
     </layout>
    </widget>
   </widget>
@@ -501,7 +466,6 @@
   <tabstop>lineLongitude</tabstop>
   <tabstop>lineElevation</tabstop>
   <tabstop>lineFix</tabstop>
-  <tabstop>buttonRotationSet</tabstop>
   <tabstop>buttonClose_plugin</tabstop>
  </tabstops>
  <resources/>
