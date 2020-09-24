@@ -13,6 +13,7 @@ from .survey_dialog import survey_Dialog
 import os.path
 
 from .layerMake import layerMake
+from .direction import direction
 
 class ATNPlugin:
     def __init__(self, iface):
@@ -44,6 +45,8 @@ class ATNPlugin:
         self.dlg.zoomInbutton.clicked.connect(self.zoomInMapCanvas)
         self.dlg.zoomOutbutton.clicked.connect(self.zoomOutMapCanvas)
         self.dlg.savePointButton.clicked.connect(self.StartSavePoint)
+
+        self.dlg.pushButton.clicked.connect(self.test)
         
         # Deshabilitar botones 
         self.dlg.buttonSelectLayer.setEnabled(False)
@@ -262,7 +265,7 @@ class ATNPlugin:
         namePoint = s.value("quick_survey_plugin/namePoint","WP")
         self.dlg.linePointName.setText(namePoint+'-'+str(self.countSurveyName))
         indexFilter = s.value("quick_survey_plugin/indexFilter", 0)
-        self.dlg.comboBox_Fix.setCurrentIndex(indexFilter)
+        self.dlg.comboBox_Fix.setCurrentIndex(int(indexFilter))
 
     def store_setting(self):
         s = QgsSettings()
@@ -282,5 +285,13 @@ class ATNPlugin:
 
     def zoomOutMapCanvas(self):
         utils.iface.mapCanvas().zoomByFactor(1.2)
+
+    def test(self):
+        p2 = [0,0]
+        p1 = [100,100]
+
+        d = direction(p1,p2,clockwise=True)
+        print(d.distance())
+        print(d.angle_to())
 
     

@@ -450,6 +450,19 @@
     </layout>
    </widget>
   </widget>
+  <widget class="QPushButton" name="pushButton">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>272</y>
+     <width>61</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>test directio</string>
+   </property>
+  </widget>
  </widget>
  <customwidgets>
   <customwidget>
