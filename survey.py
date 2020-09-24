@@ -262,7 +262,7 @@ class ATNPlugin:
         namePoint = s.value("quick_survey_plugin/namePoint","WP")
         self.dlg.linePointName.setText(namePoint+'-'+str(self.countSurveyName))
         indexFilter = s.value("quick_survey_plugin/indexFilter", 0)
-        self.dlg.comboBox_Fix.setCurrentIndex(indexFilter)
+        self.dlg.comboBox_Fix.setCurrentIndex(int(indexFilter))
 
     def store_setting(self):
         s = QgsSettings()
