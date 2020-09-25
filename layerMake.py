@@ -15,7 +15,7 @@ class layerMake:
 
 		self.timeSurveyPoint = timeSurveyPoint
 		self.timeComplete = timeSurveyPoint
-		self.SurveyPointEnabled = False
+		self.SurveyPointEnabled = True
 		self.filterPoint = self.setfilter(filt)
 		self.porcent = 0
 		self.pointName = point_ID
@@ -76,32 +76,33 @@ class layerMake:
 			self.error = True
 
 	def add_point(self,date,time,x,y,alt,fix_mode,sat_n,name = 'survey'):
-		pt1 = self.xform.transform(QgsPointXY(x, y))
-		fet = QgsFeature()
-		fet.setGeometry(QgsGeometry.fromPointXY(pt1))
-
-		fet.setAttributes([self.count,name,date,time,y,x,alt,fix_mode,sat_n])
-		self.layer_to_edit.startEditing()
-		self.layer_to_edit.addFeatures([fet])
-		self.layer_to_edit.commitChanges()
 		
-		utils.iface.mapCanvas().refresh()
+		if fix_mode in self.filterPoint:
+			pt1 = self.xform.transform(QgsPointXY(x, y))
+			fet = QgsFeature()
+			fet.setGeometry(QgsGeometry.fromPointXY(pt1))
 
-		self.count += 1
+			fet.setAttributes([self.count,name,date,time,y,x,alt,fix_mode,sat_n])
+		
+			self.layer_to_edit.startEditing()
+			self.layer_to_edit.addFeatures([fet])
+			self.layer_to_edit.commitChanges()
+		
+			utils.iface.mapCanvas().refresh()
+
+			self.count += 1
 		
 	def collect_point(self,date,time,x,y,alt,fix_mode,sat_n):
 
 		if self.timeSurveyPoint > 0:
-			self.SurveyPointEnabled = True
-			
-			if fix_mode == self.filterPoint:
+			if fix_mode in self.filterPoint:
 				self.latPoint.append(y)
 				self.lonPoint.append(x)
 				self.altPoint.append(alt)
 
-				self.porcent = ((self.timeComplete - self.timeSurveyPoint)/self.timeComplete)*100
 				self.timeSurveyPoint -= 1
-		
+				self.porcent = ((self.timeComplete - self.timeSurveyPoint)/self.timeComplete)*100
+
 		elif self.timeSurveyPoint <= 0:
 			self.add_point(date,
 				time,
@@ -114,15 +115,15 @@ class layerMake:
 
 			self.porcent = 0
 			self.SurveyPointEnabled = False
-
+		
 
 	def setfilter(self,Filter):
 
 		if Filter == 'FIX':
-			return 4
+			return [4]
 
 		elif Filter == 'FLOAT':
-			return 5
+			return [5,4]
 
 		elif Filter == 'SINGLE':
-			return 1
+			return [-1,1,5,4]

@@ -13,6 +13,7 @@ from .survey_dialog import survey_Dialog
 import os.path
 
 from .layerMake import layerMake
+from .direction import direction, point_pos
 
 class ATNPlugin:
     def __init__(self, iface):
@@ -44,6 +45,7 @@ class ATNPlugin:
         self.dlg.zoomInbutton.clicked.connect(self.zoomInMapCanvas)
         self.dlg.zoomOutbutton.clicked.connect(self.zoomOutMapCanvas)
         self.dlg.savePointButton.clicked.connect(self.StartSavePoint)
+        self.dlg.setRotation.clicked.connect(self.rotation)
         
         # Deshabilitar botones 
         self.dlg.buttonSelectLayer.setEnabled(False)
@@ -54,10 +56,8 @@ class ATNPlugin:
         
         # Flat de control
         self.flatGPS    = False
-        self.flatPAUSE  = True
-        self.flatSelectedLayer = False
+        self.flatSurveyContinuos  = False
         self.flatRotationMap = False
-        
         self.flatSurveyPoint = False
         self.flatSurveyStar = False
         self.namePointFlat = []
@@ -120,43 +120,32 @@ class ATNPlugin:
         date = now[22:]+'-'+now[5:8]+'-'+now[10:12]
         time = now[13:21] 
        
-        if self.flatPAUSE == False:
-
-            if (self.fix_filter == '1'):
-                if (quality == 4 or quality == 5 or quality == 1):
-                    self.layerSurvey.add_point(date,time,GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality,len(GPSInformation.satPrn))
+        if self.flatSurveyContinuos == True:
+            self.layerSurvey.add_point(date,time,GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality,len(GPSInformation.satPrn))
             
-            elif (self.fix_filter == '5'):
-                if (quality == 4 or quality == 5):
-                    self.layerSurvey.add_point(date,time,GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality,len(GPSInformation.satPrn))
-            
-            elif (self.fix_filter == '4'):
-                if (quality == 4):
-                    self.layerSurvey.add_point(date,time,GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality,len(GPSInformation.satPrn))    
-
 
         if self.flatSurveyPoint == True:
+            if self.layer_for_point.SurveyPointEnabled == True:
+                self.layer_for_point.collect_point(date,time,GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality,len(GPSInformation.satPrn))
+                self.dlg.progressBar.setValue(self.layer_for_point.porcent)
 
-            self.layer_for_point.collect_point(date,time,GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality,len(GPSInformation.satPrn))
-            self.dlg.progressBar.setValue(self.layer_for_point.porcent)
-            
             if self.layer_for_point.SurveyPointEnabled == False:
-                
                 self.flatSurveyPoint = self.layer_for_point.SurveyPointEnabled
                 self.flatSurveyStar = False
-
                 self.countSurveyName += 1
                 self.dlg.linePointName.setText(self.layer_for_point.pointName[:self.layer_for_point.pointName.find('-')+1]+str(self.countSurveyName))
                 self.dlg.savePointButton.setText('SavePoint')
-            
+                
 
     def SelectLayerSurvey(self):
 
-        self.layerSurvey = layerMake(QgsProject().instance().mapLayersByName(self.dlg.mMapLayerComboBox.currentText())[0])
+        self.layerSurvey = layerMake(
+            QgsProject().instance().mapLayersByName(self.dlg.mMapLayerComboBox.currentText())[0],
+            filt = self.dlg.comboBox_Fix.currentText())
+
         if self.layerSurvey.error == False: 
             self.dlg.buttonGpsActive.setEnabled(True)                   # Habilitar boton inicio
             self.dlg.buttonSelectLayer.setEnabled(False)
-            self.flatSelectedLayer = True
             
         else:
             utils.iface.messageBar().pushMessage("Warning "," The select layer is not enable",level=Qgis.Warning,duration=5)
@@ -181,8 +170,7 @@ class ATNPlugin:
                 self.dlg.spinBoxTime.value(),
                 self.dlg.comboBox_Fix.currentText())
         
-            if self.layer_for_point.error == False:
-            
+            if self.layer_for_point.error == False:            
                 self.flatSurveyPoint = True
                 #self.dlg.savePointButton.setStyleSheet('QPushButton {background-color: #A3C1DA; color:red}')
                 self.dlg.savePointButton.setText('Cancel')
@@ -197,37 +185,22 @@ class ATNPlugin:
             self.dlg.progressBar.setValue(0)
             self.dlg.savePointButton.setText('SavePoint')
 
-
     def star_Read(self):                                            # Rutina inicializar toma de puntos
-        self.fix_filter = self.dlg.comboBox_Fix.currentText()
-        
-        if self.fix_filter == 'FIX':
-            self.fix_filter = '4'
-            
-        elif self.fix_filter == 'FLOAT':
-            self.fix_filter = '5'
-            
-        elif self.fix_filter == 'SINGLE':
-            self.fix_filter = '1'
-                
-        self.flatPAUSE = False
-        
+        self.flatSurveyContinuos = True        
         # Habilitamos botones
         self.dlg.buttonGpsActive.setEnabled(False)
         self.dlg.buttonGPSPause.setEnabled(True)
         self.dlg.buttonGpsDesactive.setEnabled(True)
 
     def pause_Read(self):
-        self.flatPAUSE = True    
-        
+        self.flatSurveyContinuos = False    
         # Habilitamos botones
         self.dlg.buttonGpsActive.setEnabled(True)
         self.dlg.buttonGPSPause.setEnabled(False)
         self.dlg.buttonGpsDesactive.setEnabled(True)
 
     def end_Read(self):                                          # Rutina Finalizar Captura
-        self.flatPAUSE = True
-
+        self.flatSurveyContinuos = False
         # Habilitamos Botones
         self.dlg.buttonGpsActive.setEnabled(False)
         self.dlg.buttonGpsDesactive.setEnabled(False)
@@ -282,5 +255,28 @@ class ATNPlugin:
 
     def zoomOutMapCanvas(self):
         utils.iface.mapCanvas().zoomByFactor(1.2)
+        
+       
+##############################################################################################
+    def rotation(self):
 
-    
+        if self.flatRotationMap == False:
+            self.flatRotationMap = True
+            
+            p1 = [0,0]
+            p2 = [25,25]
+
+            d = direction(p1,p2,clockwise=True)
+            
+            #determinar punto de llegada tomando en cuenta origen distancia y angulo de partida
+            print(point_pos(p1, d.distance(), d.angle_to(), clockwise=True))
+            
+            MapRot = utils.iface.mapCanvas().rotation()
+            
+            if abs(MapRot - d.angle_to()) > 10:
+                utils.iface.mapCanvas().setRotation(360 - d.angle_to())
+
+        else:
+            self.flatRotationMap = False
+
+##############################################################################################
