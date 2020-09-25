@@ -255,7 +255,8 @@ class ATNPlugin:
 
     def zoomOutMapCanvas(self):
         utils.iface.mapCanvas().zoomByFactor(1.2)
-
+        
+       
 ##############################################################################################
     def rotation(self):
 
