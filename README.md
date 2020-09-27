@@ -24,7 +24,7 @@ This tool will help producers to implement current technologies in more efficien
 - [X] Debug interface
 - [ ] Field tests
 - [ ] Develop help documentation
-- [ ] Set rotation map in real time
+- [X] Set rotation map in real time
 - [ ] Project area calculation
 
 ### Version Control
