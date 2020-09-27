@@ -1,22 +1,36 @@
 import math 
+from qgis.core import (QgsCoordinateReferenceSystem,
+	QgsCoordinateTransform,
+	QgsProject,
+	QgsPointXY)
 
 class direction:
-	def __init__(self, p1, p2, rotation=0, clockwise=False):
-		self.p1 = p1
-		self.p2 = p2
+	def __init__(self, lat, lon, rotation=0, clockwise=False):
+
+		self.lat = lat
+		self.lon = lon
+
+		crsSrc = QgsCoordinateReferenceSystem("EPSG:4326")          
+		crsDest = QgsCoordinateReferenceSystem("EPSG:3857")                       # WGS 84 a WGS de la capa seleccionada
+		transformContext = QgsProject.instance().transformContext()             # Crear instancia de tranformacion
+		self.xform = QgsCoordinateTransform(crsSrc, crsDest, transformContext)  # Crear formulario transformacion
+		self.pt1 = self.xform.transform(QgsPointXY(lon, lat))
+
 		self.rotation = rotation
 		self.clockwise = clockwise
 
-	def distance(self):
-		return math.sqrt((self.p2[0] - self.p1[0])**2 + (self.p2[1] - self.p1[1])**2)
+	def distance(self, lat, lon):
+		self.pt2 = self.xform.transform(QgsPointXY(lon, lat))
+		distance = math.sqrt((self.pt2[0] - self.pt1[0])**2 + (self.pt2[1] - self.pt1[1])**2)
+		return distance
 
 	def angle_to(self):
 		if abs(self.rotation) > 360:
 			self.rotation %= 360
 
-		Dx = self.p2[0] - self.p1[0]
-		Dy = self.p2[1] - self.p1[1]
-		angle = math.degrees(math.atan2(Dx, Dy))
+		Dx = self.pt2[0] - self.pt1[0]
+		Dy = self.pt2[1] - self.pt1[1]
+		angle = math.degrees(math.atan2(Dy, Dx))
 
 		if self.clockwise:
 			angle -= self.rotation
@@ -24,6 +38,7 @@ class direction:
 		else:
 			angle = (360 - angle if angle > 0 else -1 * angle) - self.rotation
 			return angle if angle > 0 else angle + 360
+
 
 def point_pos(origin, amplitude, angle, rotation=0, clockwise=False):
 	if abs(rotation) > 360:

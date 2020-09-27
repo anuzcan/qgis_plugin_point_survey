@@ -58,6 +58,7 @@ class ATNPlugin:
         self.flatGPS    = False
         self.flatSurveyContinuos  = False
         self.flatRotationMap = False
+        self.flatCountPoint_by_RotationMap = 0
         self.flatSurveyPoint = False
         self.flatSurveyStar = False
         self.namePointFlat = []
@@ -118,12 +119,30 @@ class ATNPlugin:
         quality = GPSInformation.quality
 
         date = now[22:]+'-'+now[5:8]+'-'+now[10:12]
-        time = now[13:21] 
-       
+        time = now[13:21]
+
+
+        # Rutina para coleccion de puntos de forma continua
         if self.flatSurveyContinuos == True:
             self.layerSurvey.add_point(date,time,GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality,len(GPSInformation.satPrn))
-            
+        
+        #Rietina para rotar mapa con forme nos movemos en el campo
+        if self.flatRotationMap == True:
+        	
+        	if self.flatCountPoint_by_RotationMap == 0:
+        		self.d = direction(GPSInformation.longitude,GPSInformation.latitude,clockwise=True)
 
+        	self.flatCountPoint_by_RotationMap += 1
+        	
+        	if self.flatCountPoint_by_RotationMap >= 2:
+        		distance = self.d.distance(GPSInformation.longitude,GPSInformation.latitude)
+        		#print(distance)
+        		#print(self.d.angle_to())
+        		utils.iface.mapCanvas().setRotation(360 - self.d.angle_to())
+        		self.flatCountPoint_by_RotationMap = 0
+        		
+
+        # Rutina para acumular coordenadas para crear un punto promedio
         if self.flatSurveyPoint == True:
             if self.layer_for_point.SurveyPointEnabled == True:
                 self.layer_for_point.collect_point(date,time,GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality,len(GPSInformation.satPrn))
@@ -135,7 +154,7 @@ class ATNPlugin:
                 self.countSurveyName += 1
                 self.dlg.linePointName.setText(self.layer_for_point.pointName[:self.layer_for_point.pointName.find('-')+1]+str(self.countSurveyName))
                 self.dlg.savePointButton.setText('SavePoint')
-                
+
 
     def SelectLayerSurvey(self):
 
@@ -256,27 +275,11 @@ class ATNPlugin:
     def zoomOutMapCanvas(self):
         utils.iface.mapCanvas().zoomByFactor(1.2)
         
-       
-##############################################################################################
     def rotation(self):
 
         if self.flatRotationMap == False:
             self.flatRotationMap = True
             
-            p1 = [0,0]
-            p2 = [25,25]
-
-            d = direction(p1,p2,clockwise=True)
-            
-            #determinar punto de llegada tomando en cuenta origen distancia y angulo de partida
-            print(point_pos(p1, d.distance(), d.angle_to(), clockwise=True))
-            
-            MapRot = utils.iface.mapCanvas().rotation()
-            
-            if abs(MapRot - d.angle_to()) > 10:
-                utils.iface.mapCanvas().setRotation(360 - d.angle_to())
-
         else:
-            self.flatRotationMap = False
-
-##############################################################################################
+        	self.flatCountPoint_by_RotationMap = 0
+        	self.flatRotationMap = False
