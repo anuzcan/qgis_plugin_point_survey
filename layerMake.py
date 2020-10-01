@@ -53,8 +53,7 @@ class layerMake:
 	                    QgsField(name = "LON", type = QVariant.Double, typeName = "double", len = 23, prec = 15),
 	                    QgsField(name = "ALT", type = QVariant.Double, typeName = "double", len = 7, prec = 3),
 	                    QgsField(name = "FIX_MODE", type = QVariant.String, typeName = "int", len = 6),
-	                    QgsField(name = "SAT_N", type = QVariant.Int, typeName = "int", len = 2),
-	                    QgsField(name = "PointName", type = QVariant.String, typeName = "text", len = 20)])
+	                    QgsField(name = "SAT_N", type = QVariant.Int, typeName = "int", len = 2)])
 
 				elif self.layer_to_edit.dataProvider().fields().count() == 0:
 					self.layer_to_edit.dataProvider().addAttributes([
