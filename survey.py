@@ -14,6 +14,7 @@ import os.path
 
 from .layerMake import layerMake
 from .direction import direction, point_pos
+from .informationScripts import informations
 
 class ATNPlugin:
     def __init__(self, iface):
@@ -24,15 +25,17 @@ class ATNPlugin:
         plg_dir = os.path.dirname(__file__)                         # Obtener ruta absoluta de plugis, necesaria para acceder recursos
         icon_path = os.path.join(plg_dir, "icon.png")               # Leemos icon
 
-        self.action = QAction(QIcon(icon_path), "Quick Survey Plugin", self.iface.mainWindow())
+        self.info_user = informations('Espanol')
+
+        self.action = QAction(QIcon(icon_path), self.info_user.plugin_name, self.iface.mainWindow())
         self.action.setObjectName("RunAction")
         self.action.setWhatsThis("Configuration for RTK plugin")
-        self.action.setStatusTip("Plugis RTK Survey")
+        self.action.setStatusTip("Plugin RTK Survey")
         self.action.triggered.connect(self.run)                     # Configuramos accion a clip icon y menu 
 
         # Agregamos barra de herramientas e Icon en interfas de Qgis
         self.iface.addToolBarIcon(self.action)
-        self.iface.addPluginToMenu("&Survey Tools", self.action)
+        self.iface.addPluginToMenu(self.info_user.plugin_menu, self.action)
         
         self.dlg = survey_Dialog()                                  # Cargamos dialogo de archivo .ui
         
@@ -73,7 +76,7 @@ class ATNPlugin:
 
     def unload(self):                                               # Rutina ejecutada al deshabilitar plugin en complementos
         # remove the plugin menu item and icon
-        self.iface.removePluginMenu("&Survey Tools", self.action)
+        self.iface.removePluginMenu(self.info_user.plugin_menu, self.action)
         self.iface.removeToolBarIcon(self.action)
         del self.action
 
@@ -95,10 +98,10 @@ class ATNPlugin:
         self.connectionList = self.connectionRegistry.connectionList()
 
         if self.connectionList == []:
-            utils.iface.messageBar().pushMessage("Error "," Device GPS not found. Check GPS Information",level=Qgis.Critical,duration=5)
+            utils.iface.messageBar().pushMessage("Error ",self.info_user.plugin_error_gps1,level=Qgis.Critical,duration=5)
             return -1
         else:
-            utils.iface.messageBar().pushMessage("OK "," Device GPS found",level=Qgis.Info,duration=5)
+            utils.iface.messageBar().pushMessage("OK ",self.info_user.plugin_ok1,level=Qgis.Info,duration=5)
             return 1
 
     def read_Device(self):                                           # Rutina captura y almacenamiento de punto en capa
@@ -106,7 +109,7 @@ class ATNPlugin:
         try:
             GPSInformation = self.connectionList[0].currentGPSInformation()
         except:
-            utils.iface.messageBar().pushMessage("Error "," Device GPS not found. Check GPS Information and restart plugin",level=Qgis.Critical,duration=10)
+            utils.iface.messageBar().pushMessage("Error ",self.info_user.plugin_error_gps2,level=Qgis.Critical,duration=10)
             self.timer.stop()
             
         now = GPSInformation.utcDateTime.currentDateTime().toString(Qt.TextDate)
@@ -134,13 +137,15 @@ class ATNPlugin:
 
         	self.flatCountPoint_by_RotationMap += 1
         	
-        	if self.flatCountPoint_by_RotationMap >= 2:
-        		distance = self.d.distance(GPSInformation.longitude,GPSInformation.latitude)
-        		#print(distance)
-        		#print(self.d.angle_to())
-        		utils.iface.mapCanvas().setRotation(360 - self.d.angle_to())
-        		self.flatCountPoint_by_RotationMap = 0
-        		
+        	if self.flatCountPoint_by_RotationMap >= 4:
+                    self.flatCountPoint_by_RotationMap = 1
+                    distance = self.d.distance(GPSInformation.longitude,GPSInformation.latitude)
+                    angle = self.d.angle_to(GPSInformation.longitude,GPSInformation.latitude)
+                    
+                    if distance > 3:
+                        utils.iface.mapCanvas().setRotation(360 - angle)
+                        self.flatCountPoint_by_RotationMap = 0
+	
 
         # Rutina para acumular coordenadas para crear un punto promedio
         if self.flatSurveyPoint == True:

@@ -5,10 +5,7 @@ from qgis.core import (QgsCoordinateReferenceSystem,
 	QgsPointXY)
 
 class direction:
-	def __init__(self, lat, lon, rotation=0, clockwise=False):
-
-		self.lat = lat
-		self.lon = lon
+	def __init__(self, lon, lat, rotation=0, clockwise=False):
 
 		crsSrc = QgsCoordinateReferenceSystem("EPSG:4326")          
 		crsDest = QgsCoordinateReferenceSystem("EPSG:3857")                       # WGS 84 a WGS de la capa seleccionada
@@ -19,17 +16,19 @@ class direction:
 		self.rotation = rotation
 		self.clockwise = clockwise
 
-	def distance(self, lat, lon):
-		self.pt2 = self.xform.transform(QgsPointXY(lon, lat))
-		distance = math.sqrt((self.pt2[0] - self.pt1[0])**2 + (self.pt2[1] - self.pt1[1])**2)
+	def distance(self, lon, lat):
+		pt2 = self.xform.transform(QgsPointXY(lon, lat))
+		distance = math.sqrt((pt2[0] - self.pt1[0])**2 + (pt2[1] - self.pt1[1])**2)
 		return distance
 
-	def angle_to(self):
+	def angle_to(self, lon, lat):
+		pt2 = self.xform.transform(QgsPointXY(lon, lat))
+
 		if abs(self.rotation) > 360:
 			self.rotation %= 360
 
-		Dx = self.pt2[0] - self.pt1[0]
-		Dy = self.pt2[1] - self.pt1[1]
+		Dx = pt2[0] - self.pt1[0]
+		Dy = pt2[1] - self.pt1[1]
 		angle = math.degrees(math.atan2(Dy, Dx))
 
 		if self.clockwise:
