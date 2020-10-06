@@ -5,6 +5,9 @@ from qgis.core import (Qgis,
     QgsField, QgsCoordinateReferenceSystem, 
     QgsCoordinateTransform)
 from PyQt5.QtCore import QVariant
+from .informationScripts import informations
+
+info_user = informations('Espanol')
 
 class layerMake:
 	def __init__(self,layer, point_ID = 'survey', timeSurveyPoint=0, filt = 'SINGLE'):
@@ -30,7 +33,7 @@ class layerMake:
 		#print(self.layer_to_edit.dataProvider().fields().count())
 
 		if self.layer_to_edit.dataProvider().fields().count() > 1:
-			utils.iface.messageBar().pushMessage("Warning "," The select layer is not empty",level=Qgis.Warning,duration=5)
+			utils.iface.messageBar().pushMessage(info_user.warning,info_user.warning_1,level=Qgis.Warning,duration=5)
 		
 		if self.layer_to_edit.dataProvider().fields().count() <= 9:
 

@@ -2,6 +2,8 @@ class informations:
 	def __init__(self, language = 'english'):
 		if language == 'english':
 			self.close = 'Close'
+			self.warning = 'Warning'
+			self.warning_1 = 'The select layer is not empty'
 			self.question1 = 'You are sure you want to get out?'
 			self.plugin_name = "Quick Survey Plugin"
 			self.plugin_menu = "&Survey Tools"
@@ -10,6 +12,8 @@ class informations:
 			self.plugin_error_gps2 = "Device GPS not found. Check GPS Information and restart plugin"
 		else:
 			self.close = 'Cerrar'
+			self.warning = "Advertencia"
+			self.warning_1 = 'La capa seleccionada contiene datos'
 			self.question1 = 'Esta seguro que desea Cerrar?'
 			self.plugin_name = "Captura Rapido GPS"
 			self.plugin_menu = "&Herramiento de Captura"

@@ -9,7 +9,7 @@ from qgis.core import (Qgis, QgsApplication,
     QgsField, QgsCoordinateReferenceSystem, 
     QgsCoordinateTransform, QgsSettings)
 
-from .survey_dialog import survey_Dialog
+from .survey_dialog import survey_Dialog, tools_Dialog
 import os.path
 
 from .layerMake import layerMake
@@ -38,7 +38,7 @@ class ATNPlugin:
         self.iface.addPluginToMenu(self.info_user.plugin_menu, self.action)
         
         self.dlg = survey_Dialog()                                  # Cargamos dialogo de archivo .ui
-        
+
         # Creamos acciones para los botones y comandos
         self.dlg.buttonGpsActive.clicked.connect(self.star_Read)
         self.dlg.buttonGPSPause.clicked.connect(self.pause_Read)
@@ -49,26 +49,28 @@ class ATNPlugin:
         self.dlg.zoomOutbutton.clicked.connect(self.zoomOutMapCanvas)
         self.dlg.savePointButton.clicked.connect(self.StartSavePoint)
         self.dlg.setRotation.clicked.connect(self.rotation)
-        
+        self.dlg.configButton.clicked.connect(self.filters)
         # Deshabilitar botones 
         self.dlg.buttonSelectLayer.setEnabled(False)
         self.dlg.buttonGpsActive.setEnabled(False)          
         self.dlg.buttonGPSPause.setEnabled(False)
         self.dlg.buttonGpsDesactive.setEnabled(False)
         self.dlg.savePointButton.setEnabled(False)
-        
+
         # Flat de control
         self.flatGPS    = False
         self.flatSurveyContinuos  = False
         self.flatRotationMap = False
-        self.flatCountPoint_by_RotationMap = 0
+        self.flatDirection = False
         self.flatSurveyPoint = False
         self.flatSurveyStar = False
-        self.namePointFlat = []
         self.countSurveyName = 0
 
         select_fixMode = ["FIX","FLOAT","SINGLE"]
         self.dlg.comboBox_Fix.addItems(select_fixMode)
+
+        self.dlg.lineEdit_2.setText('No Activo')
+        self.dlg.lineEdit_2.setStyleSheet("background-color: rgb(255, 0, 0);color: rgb(255, 255, 255);")
 
         # Configurar temporizador
         self.timer = QTimer()
@@ -124,28 +126,26 @@ class ATNPlugin:
         date = now[22:]+'-'+now[5:8]+'-'+now[10:12]
         time = now[13:21]
 
-
+        
         # Rutina para coleccion de puntos de forma continua
         if self.flatSurveyContinuos == True:
-            self.layerSurvey.add_point(date,time,GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality,len(GPSInformation.satPrn))
-        
-        #Rietina para rotar mapa con forme nos movemos en el campo
-        if self.flatRotationMap == True:
-        	
-        	if self.flatCountPoint_by_RotationMap == 0:
-        		self.d = direction(GPSInformation.longitude,GPSInformation.latitude,clockwise=True)
+            
+            if self.flatDirection == True:
+                self.direc.new_point(GPSInformation.longitude,GPSInformation.latitude)
+                self.flatDirection = False
+            else:
+                angle = self.direc.angle_to(GPSInformation.longitude,GPSInformation.latitude)
+                dist = self.direc.distance(GPSInformation.longitude,GPSInformation.latitude)
+                #print('angulo:',angle)
+                #print('distancia:',dist)
+                if dist > self.filter_length:
+                    self.layerSurvey.add_point(date,time,GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality,len(GPSInformation.satPrn))
+                    self.direc.new_point(GPSInformation.longitude,GPSInformation.latitude)
 
-        	self.flatCountPoint_by_RotationMap += 1
-        	
-        	if self.flatCountPoint_by_RotationMap >= 4:
-                    self.flatCountPoint_by_RotationMap = 1
-                    distance = self.d.distance(GPSInformation.longitude,GPSInformation.latitude)
-                    angle = self.d.angle_to(GPSInformation.longitude,GPSInformation.latitude)
-                    
-                    if distance > 3:
+                #Rutina para rotar mapa con forme nos movemos en el campo
+                if self.flatRotationMap == True:
+                    if dist > self.filter_rotation:
                         utils.iface.mapCanvas().setRotation(360 - angle)
-                        self.flatCountPoint_by_RotationMap = 0
-	
 
         # Rutina para acumular coordenadas para crear un punto promedio
         if self.flatSurveyPoint == True:
@@ -210,11 +210,14 @@ class ATNPlugin:
             self.dlg.savePointButton.setText('SavePoint')
 
     def star_Read(self):                                            # Rutina inicializar toma de puntos
-        self.flatSurveyContinuos = True        
+        self.flatSurveyContinuos = True
+        self.flatDirection = True
+        self.direc = direction(clockwise=True)        
         # Habilitamos botones
         self.dlg.buttonGpsActive.setEnabled(False)
         self.dlg.buttonGPSPause.setEnabled(True)
         self.dlg.buttonGpsDesactive.setEnabled(True)
+        self.dlg.configButton.setEnabled(False)
 
     def pause_Read(self):
         self.flatSurveyContinuos = False    
@@ -225,11 +228,13 @@ class ATNPlugin:
 
     def end_Read(self):                                          # Rutina Finalizar Captura
         self.flatSurveyContinuos = False
+        self.flatDirection = True
         # Habilitamos Botones
         self.dlg.buttonGpsActive.setEnabled(False)
         self.dlg.buttonGpsDesactive.setEnabled(False)
         self.dlg.buttonGPSPause.setEnabled(False)
         self.dlg.buttonSelectLayer.setEnabled(True)
+        self.dlg.configButton.setEnabled(True)
 
     def close_plugin(self):
         self.store_setting()
@@ -260,12 +265,19 @@ class ATNPlugin:
         self.dlg.linePointName.setText(namePoint+'-'+str(self.countSurveyName))
         indexFilter = s.value("quick_survey_plugin/indexFilter", 0)
         self.dlg.comboBox_Fix.setCurrentIndex(int(indexFilter))
+        
+        self.filter_length = float(s.value("quick_survey_plugin/filter_len", 1))
+        self.filter_rotation = float(s.value("quick_survey_plugin/filter_rotation", 1))
+
+
 
     def store_setting(self):
         s = QgsSettings()
         s.setValue("quick_survey_plugin/plugin_name", "Quick Survey Plugin")
         s.setValue("quick_survey_plugin/timeSurveyPoint", self.dlg.spinBoxTime.value())
         s.setValue("quick_survey_plugin/indexFilter", self.dlg.comboBox_Fix.currentIndex())
+        s.setValue("quick_survey_plugin/filter_len",self.filter_length)
+        s.setValue("quick_survey_plugin/filter_rotation",self.filter_rotation)
 
         if self.dlg.linePointName.text().find('-') != -1:
             name = self.dlg.linePointName.text()[:self.dlg.linePointName.text().find('-')]
@@ -274,6 +286,24 @@ class ATNPlugin:
         
         s.setValue("quick_survey_plugin/namePoint",name)
 
+    def filters(self):
+        self.dlgtools = tools_Dialog(self.dlg)
+        self.dlgtools.filter_distance.setValue(self.filter_length)
+        self.dlgtools.filter_rotation.setValue(self.filter_rotation)
+        
+        self.dlgtools.pushButton.clicked.connect(self.closeFilter)
+        self.dlgtools.show()
+
+    def closeFilter(self):
+        self.filter_length = self.dlgtools.filter_distance.value()
+        self.filter_rotation = self.dlgtools.filter_rotation.value()
+
+        hdop = self.dlgtools.hdopSpinBox.value()
+        vdop = self.dlgtools.vdopSpinBox.value()
+        pdop = self.dlgtools.pdopSpinBox.value()
+        self.dlgtools.close()
+        del self.dlgtools
+
     def zoomInMapCanvas(self):
         utils.iface.mapCanvas().zoomByFactor(0.8)
 
@@ -281,10 +311,12 @@ class ATNPlugin:
         utils.iface.mapCanvas().zoomByFactor(1.2)
         
     def rotation(self):
-
         if self.flatRotationMap == False:
-            self.flatRotationMap = True
-            
+            self.dlg.lineEdit_2.setText('Activo')
+            self.dlg.lineEdit_2.setStyleSheet("background-color: rgb(0, 255, 0);color: rgb(255, 255, 255);")
+            self.flatRotationMap = True            
         else:
-        	self.flatCountPoint_by_RotationMap = 0
-        	self.flatRotationMap = False
+            utils.iface.mapCanvas().setRotation(0)
+            self.dlg.lineEdit_2.setText('No Activo')
+            self.dlg.lineEdit_2.setStyleSheet("background-color: rgb(255, 0, 0);color: rgb(255, 255, 255);")
+            self.flatRotationMap = False

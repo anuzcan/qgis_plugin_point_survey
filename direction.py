@@ -5,16 +5,18 @@ from qgis.core import (QgsCoordinateReferenceSystem,
 	QgsPointXY)
 
 class direction:
-	def __init__(self, lon, lat, rotation=0, clockwise=False):
+	def __init__(self, rotation=0, clockwise=False):
 
 		crsSrc = QgsCoordinateReferenceSystem("EPSG:4326")          
 		crsDest = QgsCoordinateReferenceSystem("EPSG:3857")                       # WGS 84 a WGS de la capa seleccionada
 		transformContext = QgsProject.instance().transformContext()             # Crear instancia de tranformacion
 		self.xform = QgsCoordinateTransform(crsSrc, crsDest, transformContext)  # Crear formulario transformacion
-		self.pt1 = self.xform.transform(QgsPointXY(lon, lat))
-
+		
 		self.rotation = rotation
 		self.clockwise = clockwise
+
+	def new_point(self, lon, lat):
+		self.pt1 = self.xform.transform(QgsPointXY(lon, lat))
 
 	def distance(self, lon, lat):
 		pt2 = self.xform.transform(QgsPointXY(lon, lat))
@@ -29,7 +31,7 @@ class direction:
 
 		Dx = pt2[0] - self.pt1[0]
 		Dy = pt2[1] - self.pt1[1]
-		angle = math.degrees(math.atan2(Dy, Dx))
+		angle = math.degrees(math.atan2(Dx, Dy))
 
 		if self.clockwise:
 			angle -= self.rotation

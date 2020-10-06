@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>302</width>
+    <width>301</width>
     <height>451</height>
    </rect>
   </property>
@@ -314,9 +314,9 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>20</y>
+        <y>30</y>
         <width>186</width>
-        <height>91</height>
+        <height>99</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout">
@@ -361,20 +361,31 @@
          </property>
         </widget>
        </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <item>
+          <widget class="QPushButton" name="setRotation">
+           <property name="text">
+            <string>Rotacion de Mapa</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="lineEdit_2">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="cursor">
+            <cursorShape>CrossCursor</cursorShape>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
       </layout>
-     </widget>
-     <widget class="QPushButton" name="setRotation">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>120</y>
-        <width>184</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Rotacion de Mapa</string>
-      </property>
      </widget>
     </widget>
    </widget>
@@ -427,9 +438,9 @@
   <widget class="QGroupBox" name="groupBox_3">
    <property name="geometry">
     <rect>
-     <x>90</x>
+     <x>10</x>
      <y>350</y>
-     <width>201</width>
+     <width>281</width>
      <height>91</height>
     </rect>
    </property>
@@ -474,6 +485,19 @@
       </layout>
      </item>
     </layout>
+   </widget>
+   <widget class="QPushButton" name="configButton">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>30</y>
+      <width>75</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Configuracion</string>
+    </property>
    </widget>
   </widget>
  </widget>
