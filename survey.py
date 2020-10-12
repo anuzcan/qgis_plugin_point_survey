@@ -1,8 +1,9 @@
 from PyQt5.QtWidgets import QAction, QMessageBox, QWidget, QPushButton
 from PyQt5.QtCore import QTimer, QVariant, Qt
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QColor
 
 from qgis import utils
+
 from qgis.core import (Qgis, QgsApplication, 
     QgsProject, QgsWkbTypes, QgsPoint, 
     QgsPointXY, QgsFeature, QgsGeometry, 
@@ -13,7 +14,7 @@ from .survey_dialog import survey_Dialog, tools_Dialog
 import os.path
 
 from .layerMake import layerMake
-from .direction import direction, point_pos
+from .direction import direction, point_pos, guide
 from .informationScripts import informations
 
 class ATNPlugin:
@@ -36,7 +37,7 @@ class ATNPlugin:
         # Agregamos barra de herramientas e Icon en interfas de Qgis
         self.iface.addToolBarIcon(self.action)
         self.iface.addPluginToMenu(self.info_user.plugin_menu, self.action)
-        
+
         self.dlg = survey_Dialog()                                  # Cargamos dialogo de archivo .ui
 
         # Creamos acciones para los botones y comandos
@@ -58,7 +59,6 @@ class ATNPlugin:
         self.dlg.savePointButton.setEnabled(False)
 
         # Flat de control
-        self.flatGPS    = False
         self.flatSurveyContinuos  = False
         self.flatRotationMap = False
         self.flatDirection = False
@@ -85,6 +85,9 @@ class ATNPlugin:
     def run(self):                                                  # Rutina ejecuta al llamar plugin
         self.read_setting()
         self.flatGPS = self.testSignal()
+    
+        self.guide = guide(self.iface.mapCanvas())
+        
         self.namePointFlat = self.dlg.linePointName.text()[:self.dlg.linePointName.text().find('-')]
 
         if self.flatGPS == True:                                  # Verificamos que este GPS conectado
@@ -96,8 +99,7 @@ class ATNPlugin:
 
     def testSignal(self):                                           # Rutina comprobar GPS Correctamento conectado
         # Registro del GPS
-        self.connectionRegistry = QgsApplication.gpsConnectionRegistry()
-        self.connectionList = self.connectionRegistry.connectionList()
+        self.connectionList = QgsApplication.gpsConnectionRegistry().connectionList()
 
         if self.connectionList == []:
             utils.iface.messageBar().pushMessage("Error ",self.info_user.plugin_error_gps1,level=Qgis.Critical,duration=5)
@@ -121,23 +123,24 @@ class ATNPlugin:
         self.dlg.lineFix.setText(str(GPSInformation.quality))
 
         self.showFix(self.dlg.lineEdit,str(GPSInformation.quality))
+        
         quality = GPSInformation.quality
-
         date = now[22:]+'-'+now[5:8]+'-'+now[10:12]
         time = now[13:21]
 
-        
         # Rutina para coleccion de puntos de forma continua
         if self.flatSurveyContinuos == True:
             
             if self.flatDirection == True:
-                self.direc.new_point(GPSInformation.longitude,GPSInformation.latitude)
-                self.flatDirection = False
+            	self.direc = direction(clockwise=True)
+            	self.direc.new_point(GPSInformation.longitude,GPSInformation.latitude)
+            	self.flatDirection = False
             else:
                 angle = self.direc.angle_to(GPSInformation.longitude,GPSInformation.latitude)
                 dist = self.direc.distance(GPSInformation.longitude,GPSInformation.latitude)
-                #print('angulo:',angle)
-                #print('distancia:',dist)
+                
+                #self.guide.paint()
+                
                 if dist > self.filter_length:
                     self.layerSurvey.add_point(date,time,GPSInformation.longitude,GPSInformation.latitude,GPSInformation.elevation,quality,len(GPSInformation.satPrn))
                     self.direc.new_point(GPSInformation.longitude,GPSInformation.latitude)
@@ -185,8 +188,6 @@ class ATNPlugin:
 
             if self.namePointFlat + '-' != self.namePoint:
                 self.namePointFlat = self.namePoint[:self.namePoint.find('-')]
-                print(self.namePointFlat)
-                print(self.namePoint)
                 self.countSurveyName = 0
 
             self.layer_for_point = layerMake(QgsProject().instance().mapLayersByName(self.dlg.mMapLayer_for_point.currentText())[0],
@@ -196,7 +197,6 @@ class ATNPlugin:
         
             if self.layer_for_point.error == False:            
                 self.flatSurveyPoint = True
-                #self.dlg.savePointButton.setStyleSheet('QPushButton {background-color: #A3C1DA; color:red}')
                 self.dlg.savePointButton.setText('Cancel')
                 self.flatSurveyStar = True
             
@@ -212,7 +212,7 @@ class ATNPlugin:
     def star_Read(self):                                            # Rutina inicializar toma de puntos
         self.flatSurveyContinuos = True
         self.flatDirection = True
-        self.direc = direction(clockwise=True)        
+              
         # Habilitamos botones
         self.dlg.buttonGpsActive.setEnabled(False)
         self.dlg.buttonGPSPause.setEnabled(True)
@@ -238,6 +238,8 @@ class ATNPlugin:
 
     def close_plugin(self):
         self.store_setting()
+        
+        self.guide.erase()
 
         self.end_Read()
         if self.flatGPS == True:
@@ -269,8 +271,6 @@ class ATNPlugin:
         self.filter_length = float(s.value("quick_survey_plugin/filter_len", 1))
         self.filter_rotation = float(s.value("quick_survey_plugin/filter_rotation", 1))
 
-
-
     def store_setting(self):
         s = QgsSettings()
         s.setValue("quick_survey_plugin/plugin_name", "Quick Survey Plugin")
@@ -298,9 +298,6 @@ class ATNPlugin:
         self.filter_length = self.dlgtools.filter_distance.value()
         self.filter_rotation = self.dlgtools.filter_rotation.value()
 
-        hdop = self.dlgtools.hdopSpinBox.value()
-        vdop = self.dlgtools.vdopSpinBox.value()
-        pdop = self.dlgtools.pdopSpinBox.value()
         self.dlgtools.close()
         del self.dlgtools
 

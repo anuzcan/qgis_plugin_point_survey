@@ -2,7 +2,13 @@ import math
 from qgis.core import (QgsCoordinateReferenceSystem,
 	QgsCoordinateTransform,
 	QgsProject,
-	QgsPointXY)
+	QgsPointXY,
+	QgsPoint,
+	QgsGeometry,
+	QgsWkbTypes)
+
+from qgis.gui import QgsRubberBand
+from PyQt5.QtGui import QColor
 
 class direction:
 	def __init__(self, rotation=0, clockwise=False):
@@ -58,3 +64,17 @@ def point_pos(origin, amplitude, angle, rotation=0, clockwise=False):
 
 
 # https://stackoverrun.com/es/q/10271498
+
+class guide:
+	def __init__(self,mapCanvas):
+		print(mapCanvas.mapSettings().destinationCrs().authid())
+		self.r_polyline = QgsRubberBand(mapCanvas, False)
+		self.r_polyline.setWidth(2)
+		self.r_polyline.setColor(QColor(0, 100, 255))
+	
+	def paint(self):
+		points = [QgsPoint(-85, 10), QgsPoint(-84, 10.5), QgsPoint(-84, 10.4)]
+		self.r_polyline.setToGeometry(QgsGeometry.fromPolyline(points), None)
+    
+	def erase(self):
+		self.r_polyline.reset(QgsWkbTypes.LineGeometry)

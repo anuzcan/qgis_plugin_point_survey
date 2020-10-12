@@ -31,17 +31,6 @@ self.layer_for_point = QgsProject().instance().mapLayersByName(self.dlg.mMapLaye
 
 
 
-#################################################################################
-# connect to signal renderComplete which is emitted when canvas rendering is done
-self.iface.mapCanvas().renderComplete.connect(self.renderTest)
-	# Funcion llamada cuando el mapa se renderiza
-	def renderTest(self, painter):
-        # use painter for drawing to map canvas
-        print("TestPlugin: renderTest called!")
-
-# disconnect form signal of the canvas
-self.iface.mapCanvas().renderComplete.disconnect(self.renderTest)
-#################################################################################
 https://qgis.github.io/pyqgis/3.2/core/Gps/QgsGpsInformation.html
 # Listado de Informacion disponible del GPS
         #GPSInformation.latitude

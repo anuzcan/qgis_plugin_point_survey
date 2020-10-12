@@ -51,75 +51,6 @@
      </rect>
     </property>
     <layout class="QFormLayout" name="formLayout">
-     <item row="2" column="0">
-      <widget class="QLabel" name="label_hdpo">
-       <property name="text">
-        <string>HDOP: </string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="QLabel" name="label_vdop">
-       <property name="text">
-        <string>VDOP: </string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="QLabel" name="label_pdop">
-       <property name="text">
-        <string>PDOP: </string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="QDoubleSpinBox" name="hdopSpinBox">
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-       <property name="suffix">
-        <string> mts</string>
-       </property>
-       <property name="singleStep">
-        <double>0.010000000000000</double>
-       </property>
-       <property name="value">
-        <double>0.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QDoubleSpinBox" name="vdopSpinBox">
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-       <property name="suffix">
-        <string> mts</string>
-       </property>
-       <property name="singleStep">
-        <double>0.010000000000000</double>
-       </property>
-       <property name="value">
-        <double>0.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="1">
-      <widget class="QDoubleSpinBox" name="pdopSpinBox">
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-       <property name="suffix">
-        <string> mts</string>
-       </property>
-       <property name="singleStep">
-        <double>0.010000000000000</double>
-       </property>
-       <property name="value">
-        <double>0.000000000000000</double>
-       </property>
-      </widget>
-     </item>
      <item row="0" column="0">
       <widget class="QLabel" name="label">
        <property name="whatsThis">
@@ -149,6 +80,13 @@
        </property>
       </widget>
      </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Distancia Minima Rotacion:</string>
+       </property>
+      </widget>
+     </item>
      <item row="1" column="1">
       <widget class="QDoubleSpinBox" name="filter_rotation">
        <property name="alignment">
@@ -159,13 +97,6 @@
        </property>
        <property name="singleStep">
         <double>0.010000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_2">
-       <property name="text">
-        <string>Distancia Minima Rotacion:</string>
        </property>
       </widget>
      </item>
